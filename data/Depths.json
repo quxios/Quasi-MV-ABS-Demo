@@ -1,0 +1,33 @@
+{
+  "#00c800": {
+    "depth": 0,
+    "zoom": "",
+    "shiftY": ""
+  },
+  "#e06f8b": {
+    "depth": 24,
+    "shiftY": 36
+  },
+  "#00be00": {
+    "depth": 24,
+    "zoom": 0.9
+  },
+  "#00b400": {
+    "depth": 48,
+    "zoom": 0.8
+  },
+  "#00aa00": {
+    "depth": 72,
+    "zoom": 0.7
+  },
+  "#00a000": {
+    "depth": 96,
+    "zoom": 0.6,
+    "shiftY": ""
+  },
+  "#HexColor6": {
+    "depth": 48,
+    "zoom": 1,
+    "shiftY": 0
+  }
+}

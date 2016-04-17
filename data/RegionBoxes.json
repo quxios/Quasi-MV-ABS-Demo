@@ -1,0 +1,38 @@
+{
+  "1": [
+    {
+      "width": 0,
+      "height": 0,
+      "ox": 0,
+      "oy": 0,
+      "tag": ""
+    }
+  ],
+  "2": [
+    {
+      "width": 48,
+      "height": 48,
+      "ox": 0,
+      "oy": 0,
+      "tag": ""
+    }
+  ],
+  "3": [
+    {
+      "width": 48,
+      "height": 48,
+      "ox": 0,
+      "oy": 0,
+      "tag": "<noshadow>"
+    }
+  ],
+  "4": [
+    {
+      "width": 48,
+      "height": 48,
+      "ox": 0,
+      "oy": 0,
+      "tag": "<ladder>"
+    }
+  ]
+}

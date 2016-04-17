@@ -1,0 +1,4 @@
+[
+  {"abr": "qpp", "name": "Quasi Parameters Plus", "default": 0},
+  {"abr": "qpt", "name": "Quasi Plus Test", "default": 0}
+]
