@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.95
-// Last Update: April 1, 2016
+// Version: 0.96
+// Last Update: April 17, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -19,12 +19,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.95;
+Imported.Quasi_ABS = 0.96;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.95
+ * Version: 0.96
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -2056,6 +2056,7 @@ var QuasiABS = (function() {
     this._noPopup = /<nopopup>/i.test(notes);
     var onDeath = /<ondeath>([\s\S]*)<\/ondeath>/i.exec(notes);
     this._onDeath = onDeath ? onDeath[1] : "";
+    this._dontErase = /<donterase>/i.test(notes);
     this._team  = this.enemy().meta.team || 2;
   };
 
@@ -2691,6 +2692,7 @@ var QuasiABS = (function() {
       this._respawn = -1;
       this._onDeath = this._battler._onDeath;
       this._noPopup = this._battler._noPopup;
+      this._dontErase = this._battler._dontErase;
       this._team = this._battler._team;
     }
   };
@@ -2856,8 +2858,10 @@ var QuasiABS = (function() {
     }
     this._respawn = Number(this._battler.enemy().meta.respawn) || -1;
     this._battler = null;
-    this.erase();
-    return;
+    if (!this._dontErase) {
+      console.log(this._dontErase);
+      this.erase();
+    }
   };
 
   Game_Event.prototype.setupLoot = function() {
