@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.293
-// Last Update: April 16, 2016
+// Version: 1.294
+// Last Update: April 17, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,12 +22,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.293;
+Imported.Quasi_Movement = 1.294;
 
 //=============================================================================
  /*:
  * @plugindesc Change the way RPG Maker MV handles Movement.
- * Version: 1.293
+ * Version: 1.294
  * <QuasiMovement>
  * @author Quasi       Site: http://quasixi.com
  *
@@ -1652,6 +1652,10 @@ var QuasiMovement = {};
     } else {
       return "";
     }
+  };
+
+  Game_CharacterBase.prototype.setSelfSwitch = function() {
+    return;
   };
 
   Game_CharacterBase.prototype.direction8 = function(horz, vert) {
@@ -3520,6 +3524,14 @@ var QuasiMovement = {};
   //
   // The game object class for an event. It contains functionality for event page
   // switching and running parallel process events.
+
+  Game_Event.prototype.setSelfswitch = function(selfSwitch, bool) {
+    var mapId = this._mapId;
+    var eventId = this._eventId;
+    if (!mapId || !eventId) return;
+    var key = [mapId, eventId, selfSwitch];
+    $gameSelfSwitches.setValue(key, bool);
+  };
 
   Game_Event.prototype.updateStop = function() {
     if (this._locked) {
