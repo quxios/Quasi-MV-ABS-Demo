@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.05
-// Last Update: March 26, 2016
+// Version: 1.06
+// Last Update: April 11, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,7 +17,7 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.05;
+Imported.Quasi_Sprite = 1.06;
 
 //=============================================================================
  /*:
@@ -81,7 +81,23 @@ var QuasiSprite = { ready: false };
         var chara = charaId === 0 ? $gamePlayer : $gameMap.event(charaId);
         var pose = args[2];
         var locked = args[3] === "true";
-        chara.playPose(pose, locked);
+        var pause = args[4] === "true";
+        chara.playPose(pose, locked, pause);
+        return;
+      }
+      if (args[0].toLowerCase() === "looppose") {
+        var charaId = Number(args[1]);
+        var chara = charaId === 0 ? $gamePlayer : $gameMap.event(charaId);
+        var pose = args[2];
+        var locked = args[3] === "true";
+        chara.loopPose(pose, locked);
+        return;
+      }
+      if (args[0].toLowerCase() === "clearpose") {
+        var charaId = Number(args[1]);
+        var chara = charaId === 0 ? $gamePlayer : $gameMap.event(charaId);
+        chara.clearPose();
+        return;
       }
     }
     Alias_Game_Interpreter_pluginCommand.call(this, command, args);
@@ -170,8 +186,14 @@ var QuasiSprite = { ready: false };
       this._pattern++;
       if (this._pattern === this.maxPattern()) {
         if (this._posePlaying) {
-          this._posePlaying = false;
-          this._locked = false;
+          if (this._posePlaying.pause) {
+            this._pattern--;
+            return;
+          }
+          if (!this._posePlaying.loop) {
+            this.clearPose();
+            return;
+          }
         }
         this.resetPattern();
       }
@@ -206,7 +228,7 @@ var QuasiSprite = { ready: false };
     this._qSprite = this.isQCharacter() ? QuasiSprite.json[this.isQCharacter()] : null;
   };
 
-  Game_CharacterBase.prototype.playPose = function(pose, wait) {
+  Game_CharacterBase.prototype.playPose = function(pose, lock, pause) {
     if (this._qSprite) {
       var dir = this._direction;
       if (Imported.Quasi_Movement && this.isDiagonal()) {
@@ -216,8 +238,37 @@ var QuasiSprite = { ready: false };
     }
     if (!this.hasPose(pose)) return;
     this._pose = pose;
-    this._posePlaying = true;
-    this._waitForPose = wait;
+    this._posePlaying = {
+      lock: lock,
+      pause: pause,
+      loop: false
+    }
+    this._animationCount = 0;
+    this._pattern = 0;
+  };
+
+  Game_CharacterBase.prototype.loopPose = function(pose, lock) {
+    if (this._qSprite) {
+      var dir = this._direction;
+      if (Imported.Quasi_Movement && this.isDiagonal()) {
+        dir = this.isDiagonal();
+      }
+      pose += dir;
+    }
+    if (!this.hasPose(pose)) return;
+    this._pose = pose;
+    this._posePlaying = {
+      lock: lock,
+      pause: false,
+      loop: true
+    }
+    this._animationCount = 0;
+    this._pattern = 0;
+  };
+
+  Game_CharacterBase.prototype.clearPose = function() {
+    this._posePlaying = null;
+    this._locked = false;
     this._animationCount = 0;
     this._pattern = 0;
   };
@@ -237,7 +288,7 @@ var QuasiSprite = { ready: false };
 
   var Alias_Game_Player_canMove = Game_Player.prototype.canMove;
   Game_Player.prototype.canMove = function() {
-    if (this._posePlaying && this._waitForPose) return false;
+    if (this._posePlaying && this._posePlaying.lock) return false;
     return Alias_Game_Player_canMove.call(this);
   };
 

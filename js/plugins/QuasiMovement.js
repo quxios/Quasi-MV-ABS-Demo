@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.281
-// Last Update: March 19, 2016
+// Version: 1.293
+// Last Update: April 16, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,17 +22,17 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.281;
+Imported.Quasi_Movement = 1.293;
 
 //=============================================================================
  /*:
- * @plugindesc Change the way RPG Maker MV handles movement.
- * Version: 1.281
+ * @plugindesc Change the way RPG Maker MV handles Movement.
+ * Version: 1.293
  * <QuasiMovement>
  * @author Quasi       Site: http://quasixi.com
  *
  * @param Grid
- * @desc The amount of pixels you want to move per movement.
+ * @desc The amount of pixels you want to move per Movement.
  * Script Default: 1   MV Default: 48
  * @default 1
  *
@@ -61,7 +61,7 @@ Imported.Quasi_Movement = 1.281;
  * @default false
  *
  * @param Mid Pass
- * @desc An extra collision check for the midpoint of the movement.
+ * @desc An extra collision check for the midpoint of the Movement.
  * Set to true or false
  * @default false
  *
@@ -210,10 +210,10 @@ function Sprite_Collider() {
 //-----------------------------------------------------------------------------
 // Quasi Movement
 
-var QuasiMovement = (function() {
-  var Movement = {};
-  Movement.proccessParameters = function() {
-    var parameters   = $plugins.filter(function(p) { return p.description.contains('<QuasiMovement>'); })[0].parameters;
+var QuasiMovement = {};
+(function() {
+  QuasiMovement.proccessParameters = function() {
+    var parameters   = $plugins.filter(function(p) { return p.description.contains('<QuasiMovement>') && p.status; })[0].parameters;
     this.grid        = Number(parameters['Grid'] || 1);
     this.offGrid     = parameters['Off Grid'].toLowerCase() === 'true';
     this.tileSize    = Number(parameters['Tile Size'] || 48);
@@ -287,20 +287,20 @@ var QuasiMovement = (function() {
     }
   };
 
-  Movement.loadRegionBoxes = function() {
+  QuasiMovement.loadRegionBoxes = function() {
     var xhr = new XMLHttpRequest();
     var url = this.jFolder + 'RegionBoxes.json';
     xhr.open('GET', url, true);
     xhr.overrideMimeType('application/json');
     xhr.onload = function() {
       if (xhr.status < 400) {
-        Movement.regionBoxes = JSON.parse(xhr.responseText);
+        QuasiMovement.regionBoxes = JSON.parse(xhr.responseText);
       }
     };
     xhr.send();
   };
 
-  Movement.stringToAry = function(string, keepWhiteSpace) {
+  QuasiMovement.stringToAry = function(string, keepWhiteSpace) {
     var ary = string.split(',');
     ary = ary.map(function(s) {
       if (!keepWhiteSpace) s = s.replace(/\s+/g, '');
@@ -314,7 +314,7 @@ var QuasiMovement = (function() {
     return ary;
   };
 
-  Movement.stringToObjAry = function(string, thisobj) {
+  QuasiMovement.stringToObjAry = function(string, thisobj) {
     thisobj = thisobj || this;
     var ary = string.split('\n');
     var obj = {};
@@ -335,7 +335,7 @@ var QuasiMovement = (function() {
     });
     return obj;
   };
-  Movement.proccessParameters();
+  QuasiMovement.proccessParameters();
 
   //-----------------------------------------------------------------------------
   // Polygon_Collider
@@ -621,10 +621,10 @@ var QuasiMovement = (function() {
     var x2 = this._xMax + this.x + this.offsetX();
     var y1 = this._yMin + this.y + this.offsetY();
     var y2 = this._yMax + this.y + this.offsetY();
-    x1 = Math.floor(x1 / Movement.tileSize);
-    x2 = Math.floor(x2 / Movement.tileSize);
-    y1 = Math.floor(y1 / Movement.tileSize);
-    y2 = Math.floor(y2 / Movement.tileSize);
+    x1 = Math.floor(x1 / QuasiMovement.tileSize);
+    x2 = Math.floor(x2 / QuasiMovement.tileSize);
+    y1 = Math.floor(y1 / QuasiMovement.tileSize);
+    y2 = Math.floor(y2 / QuasiMovement.tileSize);
     return [x1, x2, y1, y2];
   };
 
@@ -657,6 +657,7 @@ var QuasiMovement = (function() {
 
   Polygon_Collider.prototype.inside = function(other) {
     if (this.height === 0 || this.width === 0) return false;
+    if (other.height === 0 || other.width === 0) return false;
     var i, j;
     for (i = 0, j = other.vertices().length; i < j; i++) {
       if (!this.containsPoint(vertices[i].x, vertices[i].y)) {
@@ -668,6 +669,7 @@ var QuasiMovement = (function() {
 
   Polygon_Collider.prototype.halfInside = function(other) {
     if (this.height === 0 || this.width === 0) return false;
+    if (other.height === 0 || other.width === 0) return false;
     var vertices = other.vertices();
     var pass = 0;
     var i, j;
@@ -698,7 +700,7 @@ var QuasiMovement = (function() {
     return odd;
   };
 
-  Movement.Polygon_Collider = Polygon_Collider;
+  QuasiMovement.Polygon_Collider = Polygon_Collider;
 
   //-----------------------------------------------------------------------------
   // Box_Collider
@@ -728,7 +730,7 @@ var QuasiMovement = (function() {
     this.rotate(0);
   };
 
-  Movement.Box_Collider = Box_Collider;
+  QuasiMovement.Box_Collider = Box_Collider;
 
   //-----------------------------------------------------------------------------
   // Circle_Collider ( More of Ellipise not circle)
@@ -793,6 +795,7 @@ var QuasiMovement = (function() {
 
   Circle_Collider.prototype.intersects = function(other) {
     if (this.height === 0 || this.width === 0) return false;
+    if (other.height === 0 || other.width === 0) return false;
     if (this.containsPoint(other._center.x, other._center.y)) return true;
     if (other.containsPoint(this._center.x, this._center.y)) return true;
     var x1 = this._center.x;
@@ -835,7 +838,7 @@ var QuasiMovement = (function() {
     return xOverRx + yOverRy <= 1;
   };
 
-  Movement.Circle_Collider = Circle_Collider
+  QuasiMovement.Circle_Collider = Circle_Collider
 
   //-----------------------------------------------------------------------------
   // Game_Temp
@@ -893,6 +896,7 @@ var QuasiMovement = (function() {
         var end   = Number(args[2]) || start;
         var wait  = start + Math.randomInt(end - start + 1);
         this.wait(wait);
+        return;
       }
       if (args[0].toLowerCase() === "setpassability") {
         if (Number(args[1]) === 0) {
@@ -914,15 +918,33 @@ var QuasiMovement = (function() {
         } else {
           $gameMap.event(id).changeCollider(type, width, height, ox, oy);
         }
+        return;
       }
       if (args[0].toLowerCase() === "collisionmap") {
         $gameMap.loadCollisionmap(args[1]);
+        return;
       }
       if (args[0].toLowerCase() === "regionmap") {
         $gameMap.loadCollisionmap(args[1]);
+        return;
+      }
+      if (args[0].toLowerCase() === "transfer") {
+        var mapId = Number(args[1]);
+        var x = Number(args[2]) / QuasiMovement.tileSize;
+        var y = Number(args[3]) / QuasiMovement.tileSize;
+        var retain = Number(args[4]) || 0;
+        var fade = Number(args[5]) || 0;
+        $gamePlayer.reserveTransfer(mapId, x, y, retain, fade);
+        return;
       }
     }
     Alias_Game_Interpreter_pluginCommand.call(this, command, args);
+  };
+
+  var Alias_Scene_Load_reloadMapIfUpdated = Scene_Load.prototype.reloadMapIfUpdated;
+  Scene_Load.prototype.reloadMapIfUpdated = function() {
+    Alias_Scene_Load_reloadMapIfUpdated.call(this);
+    QuasiMovement._needsRefresh = true;
   };
 
   //-----------------------------------------------------------------------------
@@ -933,13 +955,23 @@ var QuasiMovement = (function() {
 
   var Alias_Game_Map_setup = Game_Map.prototype.setup;
   Game_Map.prototype.setup = function(mapId) {
-    delete Movement._mapColliders;
-    delete Movement._characterGrid;
-    Movement._currentCM = null;
-    Movement._currentRM = null;
+    QuasiMovement._mapColliders = null;
+    QuasiMovement._characterGrid = null;
+    QuasiMovement._currentCM = null;
+    QuasiMovement._currentRM = null;
     Alias_Game_Map_setup.call(this, mapId);
     this.reloadAllBoxes();
     this.refereshVehicles();
+  };
+
+  var Alias_Game_Map_refreshIfNeeded = Game_Map.prototype.refreshIfNeeded;
+  Game_Map.prototype.refreshIfNeeded = function() {
+    Alias_Game_Map_refreshIfNeeded.call(this);
+    if (QuasiMovement._needsRefresh) {
+      this.removeAllBoxes();
+      this.reloadAllBoxes();
+      QuasiMovement._needsRefresh = false;
+    }
   };
 
   Game_Map.prototype.flagAt = function(x, y) {
@@ -958,16 +990,16 @@ var QuasiMovement = (function() {
   };
 
   Game_Map.prototype.tileWidth = function() {
-    return Movement.tileSize;
+    return QuasiMovement.tileSize;
   };
 
   Game_Map.prototype.tileHeight = function() {
-    return Movement.tileSize;
+    return QuasiMovement.tileSize;
   };
 
   Game_Map.prototype.reloadAllBoxes = function() {
-    delete Movement._mapColliders;
-    delete Movement._characterGrid;
+    QuasiMovement._mapColliders = null;
+    QuasiMovement._characterGrid = null;
     this.reloadTileMap();
     var events   = this.events();
     var vehicles = this._vehicles;
@@ -985,24 +1017,26 @@ var QuasiMovement = (function() {
   };
 
   Game_Map.prototype.removeAllBoxes = function() {
-    delete Movement._mapColliders;
-    delete Movement._characterGrid;
+    QuasiMovement._mapColliders = null;
+    QuasiMovement._characterGrid = null;
+    QuasiMovement._currentCM = null;
+    QuasiMovement._currentRM = null;
     this.disposeCollisionmap();
   };
 
   Game_Map.prototype.reloadTileMap = function() {
-    Movement._mapColliders = new Array(this.width());
-    for (var x = 0; x < Movement._mapColliders.length; x++) {
-      Movement._mapColliders[x] = [];
+    QuasiMovement._mapColliders = new Array(this.width());
+    for (var x = 0; x < QuasiMovement._mapColliders.length; x++) {
+      QuasiMovement._mapColliders[x] = [];
       for (var y = 0; y < this.height(); y++) {
-        Movement._mapColliders[x].push([]);
+        QuasiMovement._mapColliders[x].push([]);
       }
     }
-    Movement._characterGrid = new Array(this.width());
-    for (var x = 0; x < Movement._characterGrid.length; x++) {
-      Movement._characterGrid[x] = [];
+    QuasiMovement._characterGrid = new Array(this.width());
+    for (var x = 0; x < QuasiMovement._characterGrid.length; x++) {
+      QuasiMovement._characterGrid[x] = [];
       for (var y = 0; y < this.height(); y++) {
-        Movement._characterGrid[x].push([]);
+        QuasiMovement._characterGrid[x].push([]);
       }
     }
     var cm = /<cm[=|:](.*?)>/i.exec($dataMap.note);
@@ -1011,19 +1045,19 @@ var QuasiMovement = (function() {
     var cmc = this.tileset().meta.cmc;
     var cmd = this.tileset().meta.cmd;
     var cme = this.tileset().meta.cme;
-    Movement._cmb = cmb ? ImageManager.loadTileset(cmb) : new Bitmap(0, 0);
-    Movement._cmc = cmc ? ImageManager.loadTileset(cmc) : new Bitmap(0, 0);
-    Movement._cmd = cmd ? ImageManager.loadTileset(cmd) : new Bitmap(0, 0);
-    Movement._cme = cme ? ImageManager.loadTileset(cme) : new Bitmap(0, 0);
-    Movement._tilesetCM = {};
+    QuasiMovement._cmb = cmb ? ImageManager.loadTileset(cmb) : new Bitmap(0, 0);
+    QuasiMovement._cmc = cmc ? ImageManager.loadTileset(cmc) : new Bitmap(0, 0);
+    QuasiMovement._cmd = cmd ? ImageManager.loadTileset(cmd) : new Bitmap(0, 0);
+    QuasiMovement._cme = cme ? ImageManager.loadTileset(cme) : new Bitmap(0, 0);
+    QuasiMovement._tilesetCM = {};
     this.setupMapColliders();
-    this.loadCollisionmap(Movement._currentCM || (cm ? cm[1] : null));
-    this.loadRegionmap(Movement._currentRM || (rm ? rm[1] : null));
-    Movement._collisionmap.addLoadListener(function() {
-      Movement._cmb.addLoadListener(function() {
-        Movement._cmc.addLoadListener(function() {
-          Movement._cmd.addLoadListener(function() {
-            Movement._cme.addLoadListener(function() {
+    this.loadCollisionmap(QuasiMovement._currentCM || (cm ? cm[1] : null));
+    this.loadRegionmap(QuasiMovement._currentRM || (rm ? rm[1] : null));
+    QuasiMovement._collisionmap.addLoadListener(function() {
+      QuasiMovement._cmb.addLoadListener(function() {
+        QuasiMovement._cmc.addLoadListener(function() {
+          QuasiMovement._cmd.addLoadListener(function() {
+            QuasiMovement._cme.addLoadListener(function() {
               $gameMap.drawTilesetCM();
             });
           });
@@ -1039,25 +1073,25 @@ var QuasiMovement = (function() {
     var cStart = 256;
     var dStart = 512;
     var eStart = 768;
-    var w = h = Movement.tileSize;
-    for (var pos in Movement._tilesetCM) {
-      if (!Movement._tilesetCM.hasOwnProperty(pos)) return;
+    var w = h = QuasiMovement.tileSize;
+    for (var pos in QuasiMovement._tilesetCM) {
+      if (!QuasiMovement._tilesetCM.hasOwnProperty(pos)) return;
       var start, bitmap;
       if (pos < cStart) {
         start = 0;
-        bitmap = Movement._cmb;
+        bitmap = QuasiMovement._cmb;
       }
       if (pos >= cStart && pos < dStart) {
         start = cStart;
-        bitmap = Movement._cmc;
+        bitmap = QuasiMovement._cmc;
       }
       if (pos >= dStart && pos < eStart) {
         start = dStart;
-        bitmap = Movement._cmd;
+        bitmap = QuasiMovement._cmd;
       }
       if (pos >= eStart) {
         start = eStart;
-        bitmap = Movement._cme;
+        bitmap = QuasiMovement._cme;
       }
       if (!bitmap) return;
       var pos2 = pos - start;
@@ -1065,8 +1099,8 @@ var QuasiMovement = (function() {
       var y1 = (pos2 - x1) / $gameMap.width();
       x1 *= w;
       y1 *= h;
-      for (var i = 0; i < Movement._tilesetCM[pos].length; i++) {
-        var pos3 = Movement._tilesetCM[pos][i];
+      for (var i = 0; i < QuasiMovement._tilesetCM[pos].length; i++) {
+        var pos3 = QuasiMovement._tilesetCM[pos][i];
         var x2 = pos3 % 8;
         var y2 = (pos3 - x2) / 8;
         if (y2 > 15) {
@@ -1075,10 +1109,10 @@ var QuasiMovement = (function() {
         }
         x2 *= w;
         y2 *= h;
-        Movement._collisionmap.blt(bitmap, x2, y2, w, h, x1, y1);
+        QuasiMovement._collisionmap.blt(bitmap, x2, y2, w, h, x1, y1);
       }
     }
-    Movement._collisionmap._setPixelData();
+    QuasiMovement._collisionmap._setPixelData();
   };
 
   Game_Map.prototype.setupMapColliders = function() {
@@ -1090,14 +1124,14 @@ var QuasiMovement = (function() {
         for (var i = tiles.length - 1; i >= 0; i--) {
           if (i !== 3) {
             if (tiles[i] !== 0) {
-              Movement._tilesetCM[id] = Movement._tilesetCM[id] || [];
-              Movement._tilesetCM[id].push(tiles[i]);
+              QuasiMovement._tilesetCM[id] = QuasiMovement._tilesetCM[id] || [];
+              QuasiMovement._tilesetCM[id].push(tiles[i]);
             }
           }
           var flag = flags[tiles[i]];
           if (flag === 16) continue;
           var box = this.mapCollider(x, y, flag);
-          Movement._mapColliders[x][y] = Movement._mapColliders[x][y].concat(box);
+          QuasiMovement._mapColliders[x][y] = QuasiMovement._mapColliders[x][y].concat(box);
         }
       }
     }
@@ -1110,8 +1144,8 @@ var QuasiMovement = (function() {
       flag = flag.slice(flag.length - 12, flag.length);
       flag = parseInt(flag, 2);
     }
-    if (Movement.regionBoxes[this.regionId(x, y)]) {
-      var regionData = Movement.regionBoxes[this.regionId(x, y)];
+    if (QuasiMovement.regionBoxes[this.regionId(x, y)]) {
+      var regionData = QuasiMovement.regionBoxes[this.regionId(x, y)];
       var boxData = [];
       for (var i = 0; i < regionData.length; i++) {
         var data = [];
@@ -1124,11 +1158,11 @@ var QuasiMovement = (function() {
       }
       flag = 0;
     } else {
-      var boxData = Movement.tileBoxes[flag];
+      var boxData = QuasiMovement.tileBoxes[flag];
     }
     if (!boxData) {
       if (flag & 0x20 || flag & 0x40 || flag & 0x80 || flag & 0x100) {
-        boxData = [Movement.tileSize, Movement.tileSize, 0, 0];
+        boxData = [QuasiMovement.tileSize, QuasiMovement.tileSize, 0, 0];
       } else {
         return [];
       }
@@ -1149,8 +1183,8 @@ var QuasiMovement = (function() {
   };
 
   Game_Map.prototype.makeTileCollider = function(x, y, flag, boxData, index) {
-    var x1 = x * Movement.tileSize;
-    var y1 = y * Movement.tileSize;
+    var x1 = x * QuasiMovement.tileSize;
+    var y1 = y * QuasiMovement.tileSize;
     var ox = boxData[2] || 0;
     var oy = boxData[3] || 0;
     var w  = boxData[0];
@@ -1160,62 +1194,62 @@ var QuasiMovement = (function() {
     newBox.note      = boxData[4] || "";
     newBox.flag      = flag;
     newBox.terrain   = flag >> 12;
-    newBox.isWater1  = flag >> 12 === Movement.water1Tag || /<water1>/i.test(newBox.note);
-    newBox.isWater2  = flag >> 12 === Movement.water2Tag || /<water2>/i.test(newBox.note);
+    newBox.isWater1  = flag >> 12 === QuasiMovement.water1Tag || /<water1>/i.test(newBox.note);
+    newBox.isWater2  = flag >> 12 === QuasiMovement.water2Tag || /<water2>/i.test(newBox.note);
     newBox.isLadder  = (flag & 0x20)  || /<ladder>/i.test(newBox.note);
     newBox.isBush    = (flag & 0x40)  || /<bush>/i.test(newBox.note);
     newBox.isCounter = (flag & 0x80)  || /<counter>/i.test(newBox.note);
     newBox.isDamage  = (flag & 0x100) || /<damage>/i.test(newBox.note);
     var vx = x * this.height() * this.width();
     var vy = y * this.height();
-    var vz = index || (Movement._mapColliders[x][y] ? Movement._mapColliders[x][y].length : 0);
+    var vz = index || (QuasiMovement._mapColliders[x][y] ? QuasiMovement._mapColliders[x][y].length : 0);
     newBox.location  = vx + vy + vz;
     if (newBox.isWater2) {
-      newBox.color = Movement.water2;
+      newBox.color = QuasiMovement.water2;
     } else if (newBox.isWater1) {
-      newBox.color = Movement.water1;
+      newBox.color = QuasiMovement.water1;
     } else if (newBox.isLadder || newBox.isBush || newBox.isDamage) {
       newBox.color = '#ffffff';
     } else {
-      newBox.color = Movement.collision;
+      newBox.color = QuasiMovement.collision;
     }
     return newBox;
   };
 
   Game_Map.prototype.loadCollisionmap = function(cm) {
     if (cm) {
-      Movement._collisionmap = ImageManager.loadBitmap(Movement.cmFolder, cm);
+      QuasiMovement._collisionmap = ImageManager.loadBitmap(QuasiMovement.cmFolder, cm);
       this._hasCM = true;
     } else {
-      Movement._collisionmap = new Bitmap(this.width() * Movement.tileSize, this.height() * Movement.tileSize);
+      QuasiMovement._collisionmap = new Bitmap(this.width() * QuasiMovement.tileSize, this.height() * QuasiMovement.tileSize);
       this._hasCM = false;
     }
-    if (cm || Movement.drawTileBoxes) {
-      Movement._collisionmap.addLoadListener(function() {
+    if (cm || QuasiMovement.drawTileBoxes) {
+      QuasiMovement._collisionmap.addLoadListener(function() {
         $gameMap.drawTileBoxes();
       });
     }
-    Movement._currentCM = cm;
+    QuasiMovement._currentCM = cm;
   };
 
   Game_Map.prototype.loadRegionmap = function(rm) {
     if (rm) {
-      Movement._regionmap = ImageManager.loadBitmap(Movement.rmFolder, rm);
+      QuasiMovement._regionmap = ImageManager.loadBitmap(QuasiMovement.rmFolder, rm);
     } else {
-      Movement._regionmap = new Bitmap(this.width() * Movement.tileSize, this.height() * Movement.tileSize);
+      QuasiMovement._regionmap = new Bitmap(0,0);
     }
-    Movement._currentRM = rm;
+    QuasiMovement._currentRM = rm;
   };
 
   Game_Map.prototype.disposeCollisionmap = function() {
-    if (Movement._collisionmap) delete Movement._collisionmap;
-    if (Movement._regionmap)    delete Movement._regionmap;
+    if (QuasiMovement._collisionmap) QuasiMovement._collisionmap = null;
+    if (QuasiMovement._regionmap)    QuasiMovement._regionmap = null;
   };
 
   Game_Map.prototype.drawTileBoxes = function() {
     for (var x = 0; x < this.width(); x++) {
       for (var y = 0; y < this.height(); y++) {
-        var boxes = Movement._mapColliders[x][y];
+        var boxes = QuasiMovement._mapColliders[x][y];
         for (var i = 0; i < boxes.length; i++) {
           var x1 = boxes[i].x;
           var y1 = boxes[i].y;
@@ -1223,15 +1257,15 @@ var QuasiMovement = (function() {
           var oy = boxes[i].oy;
           var w  = boxes[i].width;
           var h  = boxes[i].height;
-          var color = boxes[i].color || Movement.collision;
-          Movement._collisionmap.fillRect(x1 + ox, y1 + oy, w, h, color);
+          var color = boxes[i].color || QuasiMovement.collision;
+          QuasiMovement._collisionmap.fillRect(x1 + ox, y1 + oy, w, h, color);
         }
       }
     }
   };
 
   Game_Map.prototype.collisionMapPass = function(collider, dir, inpassableColors) {
-    if (!Movement._collisionmap.isReady()) return false;
+    if (!QuasiMovement._collisionmap.isReady()) return false;
     if (collider.isCircle()) {
       return this.collisionMapCirclePass(collider, dir, inpassableColors);
     }
@@ -1254,12 +1288,12 @@ var QuasiMovement = (function() {
     var y2 = Math.floor(collider.edges[dir][1].y);
     for (var x = x1; x <= x2;) {
       for (var y = y1; y <= y2;) {
-        if (inpassableColors.contains(Movement._collisionmap.getColor(x, y))) {
+        if (inpassableColors.contains(QuasiMovement._collisionmap.getColor(x, y))) {
           return false;
         }
-        y = Math.min(y2 + 1, y + Movement.scanSize);
+        y = Math.min(y2 + 1, y + QuasiMovement.scanSize);
       }
-      x = Math.min(x2 + 1, x + Movement.scanSize);
+      x = Math.min(x2 + 1, x + QuasiMovement.scanSize);
     }
     return true;
   };
@@ -1292,17 +1326,17 @@ var QuasiMovement = (function() {
       var y2 = points[i + 1].y;
       var rad = Math.atan2(y1 - y2, x2 - x1);
       if (horz) {
-        var steps = Math.abs(y2 - y1) / Movement.scanSize;
+        var steps = Math.abs(y2 - y1) / QuasiMovement.scanSize;
         var slope  = (x2 - x1) / steps;
         var inc = y1 > y2 ? -1 : 1;
       } else {
-        var steps = Math.abs(x2 - x1) / Movement.scanSize;
+        var steps = Math.abs(x2 - x1) / QuasiMovement.scanSize;
         var slope  = (y2 - y1) / steps;
         var inc = x1 > x2 ? -1 : 1;
       }
       var a1 = a2 = horz ? y1 : x1;
       while ((a1 - a2) <= steps) {
-        if (inpassableColors.contains(Movement._collisionmap.getColor(x1, y1))) {
+        if (inpassableColors.contains(QuasiMovement._collisionmap.getColor(x1, y1))) {
           return false;
         }
         a1++;
@@ -1372,16 +1406,16 @@ var QuasiMovement = (function() {
       var pos = collider.circlePosition(r3);
       var x = Math.floor(pos[0]);
       var y = Math.floor(pos[1]);
-      if (inpassableColors.contains(Movement._collisionmap.getColor(x, y))) {
+      if (inpassableColors.contains(QuasiMovement._collisionmap.getColor(x, y))) {
         return false;
       }
-      r1 += s * Movement.scanSize;
+      r1 += s * QuasiMovement.scanSize;
     }
     return true;
   };
 
   Game_Map.prototype.getTileBoxesAt = function(collider, ignore, self) {
-    if (!Movement._mapColliders) return [];
+    if (!QuasiMovement._mapColliders) return [];
     ignore = ignore || function() { return false; };
     var edge = collider.gridEdge();
     var x1   = edge[0];
@@ -1393,10 +1427,10 @@ var QuasiMovement = (function() {
       for (var y = y1; y <= y2; y++) {
         if (x < 0 || x >= this.width())  continue;
         if (y < 0 || y >= this.height()) continue;
-        for (var i = 0; i < Movement._mapColliders[x][y].length; i++) {
-          if (ignore(Movement._mapColliders[x][y][i], self)) continue;
-          if (collider.intersects(Movement._mapColliders[x][y][i])) {
-            boxes.push(Movement._mapColliders[x][y][i]);
+        for (var i = 0; i < QuasiMovement._mapColliders[x][y].length; i++) {
+          if (ignore(QuasiMovement._mapColliders[x][y][i], self)) continue;
+          if (collider.intersects(QuasiMovement._mapColliders[x][y][i])) {
+            boxes.push(QuasiMovement._mapColliders[x][y][i]);
           }
         }
       }
@@ -1417,11 +1451,11 @@ var QuasiMovement = (function() {
       for (y = y1; y <= y2; y++) {
         if (x < 0 || x >= this.width())  continue;
         if (y < 0 || y >= this.height()) continue;
-        for (i = 0; i < Movement._characterGrid[x][y].length; i++) {
-          if (ignore(Movement._characterGrid[x][y][i], self)) continue;
-          if (collider.intersects(Movement._characterGrid[x][y][i].collider())) {
-            if (!charas.contains(Movement._characterGrid[x][y][i])) {
-              charas.push(Movement._characterGrid[x][y][i]);
+        for (i = 0; i < QuasiMovement._characterGrid[x][y].length; i++) {
+          if (ignore(QuasiMovement._characterGrid[x][y][i], self)) continue;
+          if (collider.intersects(QuasiMovement._characterGrid[x][y][i].collider())) {
+            if (!charas.contains(QuasiMovement._characterGrid[x][y][i])) {
+              charas.push(QuasiMovement._characterGrid[x][y][i]);
             }
           }
         }
@@ -1431,7 +1465,7 @@ var QuasiMovement = (function() {
   };
 
   Game_Map.prototype.updateCharacterGrid = function(chara, prev) {
-    if (!Movement._characterGrid) return;
+    if (!QuasiMovement._characterGrid) return;
     var box  = chara.collider();
     var edge = box.gridEdge();
     var x1   = edge[0];
@@ -1447,7 +1481,7 @@ var QuasiMovement = (function() {
         } else if (y < 0 || y >= this.height()) {
           continue;
         }
-        if (Movement._characterGrid[x][y].contains(chara)) {
+        if (QuasiMovement._characterGrid[x][y].contains(chara)) {
           boxesInside++;
         }
       }
@@ -1460,9 +1494,9 @@ var QuasiMovement = (function() {
         } else if (y < 0 || y >= this.height()) {
           continue;
         }
-        var i = Movement._characterGrid[x][y].indexOf(chara);
+        var i = QuasiMovement._characterGrid[x][y].indexOf(chara);
         if (i === -1) continue;
-        Movement._characterGrid[x][y].splice(i, 1);
+        QuasiMovement._characterGrid[x][y].splice(i, 1);
       }
     }
     for (var x = x1; x <= x2; x++) {
@@ -1472,33 +1506,33 @@ var QuasiMovement = (function() {
         } else if (y < 0 || y >= this.height()) {
           continue;
         }
-        Movement._characterGrid[x][y].push(chara);
+        QuasiMovement._characterGrid[x][y].push(chara);
       }
     }
   };
 
   Game_Map.prototype.getPixelRegion = function(x, y) {
-    if (Movement._regionmap) {
-      if (!Movement._regionmap.isReady()) return 0;
-      return Movement._regionmap.getColor(x || $gamePlayer.cx(), y || $gamePlayer.cy());
+    if (QuasiMovement._regionmap) {
+      if (!QuasiMovement._regionmap.isReady()) return 0;
+      return QuasiMovement._regionmap.getColor(x || $gamePlayer.cx(), y || $gamePlayer.cy());
     }
     return 0;
   };
 
   Game_Map.prototype.adjustPX = function(x) {
-    return this.adjustX(x / Movement.tileSize) * Movement.tileSize;
+    return this.adjustX(x / QuasiMovement.tileSize) * QuasiMovement.tileSize;
   };
 
   Game_Map.prototype.adjustPY = function(y) {
-    return this.adjustY(y / Movement.tileSize) * Movement.tileSize;
+    return this.adjustY(y / QuasiMovement.tileSize) * QuasiMovement.tileSize;
   };
 
   Game_Map.prototype.roundPX = function(x) {
-    return this.isLoopHorizontal() ? x.mod(this.width() * Movement.tileSize) : x;
+    return this.isLoopHorizontal() ? x.mod(this.width() * QuasiMovement.tileSize) : x;
   };
 
   Game_Map.prototype.roundPY = function(y) {
-    return this.isLoopVertical() ? y.mod(this.height() * Movement.tileSize) : y;
+    return this.isLoopVertical() ? y.mod(this.height() * QuasiMovement.tileSize) : y;
   };
 
   Game_Map.prototype.pxWithDirection = function(x, d, dist) {
@@ -1519,11 +1553,11 @@ var QuasiMovement = (function() {
 
   Game_Map.prototype.deltaPX = function(x1, x2) {
     var result = x1 - x2;
-    if (this.isLoopHorizontal() && Math.abs(result) > (this.width() * Movement.tileSize) / 2) {
+    if (this.isLoopHorizontal() && Math.abs(result) > (this.width() * QuasiMovement.tileSize) / 2) {
       if (result < 0) {
-        result += this.width() * Movement.tileSize;
+        result += this.width() * QuasiMovement.tileSize;
       } else {
-        result -= this.width() * Movement.tileSize;
+        result -= this.width() * QuasiMovement.tileSize;
       }
     }
     return result;
@@ -1531,11 +1565,11 @@ var QuasiMovement = (function() {
 
   Game_Map.prototype.deltaPY = function(y1, y2) {
     var result = y1 - y2;
-    if (this.isLoopVertical() && Math.abs(result) > (this.height() * Movement.tileSize) / 2) {
+    if (this.isLoopVertical() && Math.abs(result) > (this.height() * QuasiMovement.tileSize) / 2) {
       if (result < 0) {
-        result += this.height() * Movement.tileSize;
+        result += this.height() * QuasiMovement.tileSize;
       } else {
-        result -= this.height() * Movement.tileSize;
+        result -= this.height() * QuasiMovement.tileSize;
       }
     }
     return result;
@@ -1586,13 +1620,13 @@ var QuasiMovement = (function() {
     Alias_Game_CharacterBase_initMembers.call(this);
     this._px = this._py = this._realPX = this._realPY = 0;
     this._diagonal = false;
-    this._grid = Movement.grid;
+    this._grid = QuasiMovement.grid;
     this._gridPosition = [];
     this._currentPosition;
     this._passabilityLevel = 0;
     var isPlayer = this.constructor === Game_Player;
-    this._smartMoveDir   = isPlayer && (Movement.smartMove == 2 || Movement.smartMove == 3);
-    this._smartMoveSpeed = isPlayer && (Movement.smartMove == 1 || Movement.smartMove == 3);
+    this._smartMoveDir   = isPlayer && (QuasiMovement.smartMove == 2 || QuasiMovement.smartMove == 3);
+    this._smartMoveSpeed = isPlayer && (QuasiMovement.smartMove == 1 || QuasiMovement.smartMove == 3);
     this._dir4Diag = {
       8: [[4, 8], [6, 8]],
       6: [[6, 8], [6, 2]],
@@ -1663,8 +1697,8 @@ var QuasiMovement = (function() {
   var Alias_Game_CharacterBase_setPosition = Game_CharacterBase.prototype.setPosition;
   Game_CharacterBase.prototype.setPosition = function(x, y) {
     Alias_Game_CharacterBase_setPosition.call(this, x, y);
-    this._px = this._realPX = x * Movement.tileSize;
-    this._py = this._realPY = y * Movement.tileSize;
+    this._px = this._realPX = x * QuasiMovement.tileSize;
+    this._py = this._realPY = y * QuasiMovement.tileSize;
     if (this.constructor === Game_Event) {
       if (!this.page()) return;
     }
@@ -1673,7 +1707,7 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.setPixelPosition = function(x, y) {
-    this.setPosition(x / Movement.tileSize, y / Movement.tileSize);
+    this.setPosition(x / QuasiMovement.tileSize, y / QuasiMovement.tileSize);
   };
 
   var Alias_Game_CharacterBase_copyPosition = Game_CharacterBase.prototype.copyPosition;
@@ -1710,7 +1744,7 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.canPass = function(x, y, dir) {
-    return this.canPixelPass(x * Movement.tileSize, y * Movement.tileSize, dir);
+    return this.canPixelPass(x * QuasiMovement.tileSize, y * QuasiMovement.tileSize, dir);
   };
 
   Game_CharacterBase.prototype.canPixelPass = function(x, y, dir, dist) {
@@ -1726,8 +1760,8 @@ var QuasiMovement = (function() {
       var y3   = edge[3];
       if (x2 < 0 || x3 > $gameMap.width() - 1 ||
           y2 < 0 || y3 > $gameMap.height() - 1) {
-        var w = ($gameMap.width() - 1) * Movement.tileSize;
-        var h = ($gameMap.height() - 1) * Movement.tileSize;
+        var w = ($gameMap.width() - 1) * QuasiMovement.tileSize;
+        var h = ($gameMap.height() - 1) * QuasiMovement.tileSize;
         x2 = x1 < 0 ? x1 + w : (x1 / 48 > $gameMap.width() - 1 ? x1 - w : x1);
         y2 = y1 < 0 ? y1 + h : (y1 / 48 > $gameMap.height() - 1 ? y1 - h : y1);
         if (!this.collisionCheck(x1, y1, dir, dist) && !this.collisionCheck(x2, y2, dir, dist)) {
@@ -1745,7 +1779,7 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.canPassDiagonally = function(x, y, horz, vert) {
-    return this.canPixelPassDiagonally(x * Movement.tileSize, y * Movement.tileSize, horz, vert);
+    return this.canPixelPassDiagonally(x * QuasiMovement.tileSize, y * QuasiMovement.tileSize, horz, vert);
   };
 
   Game_CharacterBase.prototype.canPixelPassDiagonally = function(x, y, horz, vert, dist) {
@@ -1797,7 +1831,7 @@ var QuasiMovement = (function() {
     this.collider(dir).moveto(x, y);
     if (!this.valid(dir)) return false;
     if (this.isThrough() || this.isDebugThrough()) return true;
-    if (Movement.midPass && this._passabilityLevel !== 5) {
+    if (QuasiMovement.midPass && this._passabilityLevel !== 5) {
       if (!this.middlePass(x, y, dir, dist)) return false;
     }
     if ($gameMap._hasCM) {
@@ -1893,19 +1927,19 @@ var QuasiMovement = (function() {
     switch (this._passabilityLevel) {
       case 1:
       case 3:
-        colors.push(Movement.water1);
+        colors.push(QuasiMovement.water1);
         break;
       case 2:
       case 4:
-        colors.push(Movement.water1);
-        colors.push(Movement.water2);
+        colors.push(QuasiMovement.water1);
+        colors.push(QuasiMovement.water2);
         break;
     }
     return colors;
   };
 
   Game_CharacterBase.prototype.inpassableColors = function() {
-    var colors = [Movement.collision, Movement.water1, Movement.water2];
+    var colors = [QuasiMovement.collision, QuasiMovement.water1, QuasiMovement.water2];
     switch (this._passabilityLevel) {
       case 1:
       case 3:
@@ -1926,7 +1960,7 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.moveTiles = function() {
-    return this._grid < this.frameSpeed() ? (Movement.offGrid ? this.frameSpeed() : this._grid) : this._grid;
+    return this._grid < this.frameSpeed() ? (QuasiMovement.offGrid ? this.frameSpeed() : this._grid) : this._grid;
   };
 
   Game_CharacterBase.prototype.frameSpeed = function(multi) {
@@ -1935,7 +1969,7 @@ var QuasiMovement = (function() {
     } else {
       multi = 1;
     }
-    return this.distancePerFrame() * Movement.tileSize * Math.abs(multi);
+    return this.distancePerFrame() * QuasiMovement.tileSize * Math.abs(multi);
   };
 
   Game_CharacterBase.prototype.adjustFrameSpeed = function() {
@@ -1958,11 +1992,11 @@ var QuasiMovement = (function() {
   Game_CharacterBase.prototype.realMoveSpeed = function() {
     var speed = Alias_Game_CharacterBase_realMoveSpeed.call(this);
     if (this.constructor === Game_Follower) return speed;
-    return speed - (this.isDiagonal() ? Movement.diagSpeed : 0);
+    return speed - (this.isDiagonal() ? QuasiMovement.diagSpeed : 0);
   };
 
   Game_CharacterBase.prototype.freqThreshold = function() {
-    return Movement.tileSize;
+    return QuasiMovement.tileSize;
   };
 
   Game_CharacterBase.prototype.checkEventTriggerTouchFront = function(d) {
@@ -2015,8 +2049,8 @@ var QuasiMovement = (function() {
     this._currentRad = newRad;
     this._px = this._realPX = x1;
     this._py = this._realPY = y1;
-    this._x = this._realX = this._px / Movement.tileSize;
-    this._y = this._realY = this._py / Movement.tileSize;
+    this._x = this._realX = this._px / QuasiMovement.tileSize;
+    this._y = this._realY = this._py / QuasiMovement.tileSize;
     this.collider().moveto(x1, y1);
     this.checkEventTriggerTouchFront(this._direction);
   };
@@ -2035,10 +2069,10 @@ var QuasiMovement = (function() {
       this._realPY = Math.min(this._realPY + this.frameSpeed(this.radianSin()), this._py);
     }
 
-    this._x = this._px / Movement.tileSize;
-    this._y = this._py / Movement.tileSize;
-    this._realX = this._realPX / Movement.tileSize;
-    this._realY = this._realPY / Movement.tileSize;
+    this._x = this._px / QuasiMovement.tileSize;
+    this._y = this._py / QuasiMovement.tileSize;
+    this._realX = this._realPX / QuasiMovement.tileSize;
+    this._realY = this._realPY / QuasiMovement.tileSize;
 
     if (this.constructor === Game_Event) {
       if (!this._locked) this._freqCount += this.moveTiles();
@@ -2055,8 +2089,8 @@ var QuasiMovement = (function() {
   var Alias_Game_CharacterBase_updateJump = Game_CharacterBase.prototype.updateJump;
   Game_CharacterBase.prototype.updateJump = function() {
     Alias_Game_CharacterBase_updateJump.call(this);
-    this._px = this._realPX = this._x * Movement.tileSize;
-    this._py = this._realPY = this._y * Movement.tileSize;
+    this._px = this._realPX = this._x * QuasiMovement.tileSize;
+    this._py = this._realPY = this._y * QuasiMovement.tileSize;
     this.moveAllBoxes(this.px, this.py);
   };
 
@@ -2122,12 +2156,12 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.pixelJump = function(xPlus, yPlus) {
-    return this.jump(xPlus / Movement.tileSize, yPlus / Movement.tileSize);
+    return this.jump(xPlus / QuasiMovement.tileSize, yPlus / QuasiMovement.tileSize);
   };
 
   Game_CharacterBase.prototype.pixelJumpForward = function(dist, dir) {
     dir = dir || this._direction;
-    dist = dist / Movement.tileSize;
+    dist = dist / QuasiMovement.tileSize;
     var x = dir === 6 ? dist : dir === 4 ? -dist : 0;
     var y = dir === 2 ? dist : dir === 8 ? -dist : 0;
     this.jump(x, y);
@@ -2186,7 +2220,7 @@ var QuasiMovement = (function() {
     }
     this._moveSpeed = originalSpeed;
     if (!this.isMovementSucceeded() && this._smartMoveDir) {
-      if (Movement.oldSmartDir) {
+      if (QuasiMovement.oldSmartDir) {
         var dir = this._dir4Diag[d];
         if (this.canPixelPassDiagonally(this.px, this.py, dir[0][0], dir[0][1])){
           this.moveDiagonally(dir[0][0], dir[0][1]);
@@ -2202,7 +2236,7 @@ var QuasiMovement = (function() {
   Game_CharacterBase.prototype.smartMoveDir8 = function(dir) {
     var x1 = this.px;
     var y1 = this.py;
-    var dist = 0;
+    var dist = this.moveTiles();
     var horz = [4, 6].contains(dir) ? true : false;
     var steps = horz ? this.collider().height : this.collider().width;
     steps /= 2;
@@ -2212,12 +2246,12 @@ var QuasiMovement = (function() {
       var x2 = x1;
       var y2 = y1;
       while (j < steps) {
-        j += this.moveTiles();
+        j += dist;
         if (horz) {
-          x2 = $gameMap.roundPXWithDirection(x1, dir, this.moveTiles());
+          x2 = $gameMap.roundPXWithDirection(x1, dir, dist);
           y2 = y1 + j * sign;
         } else {
-          y2 = $gameMap.roundPYWithDirection(y1, dir, this.moveTiles());
+          y2 = $gameMap.roundPYWithDirection(y1, dir, dist);
           x2 = x1 + j * sign;
         }
         var pass = this.canPixelPass(x2, y2, 5);
@@ -2227,8 +2261,8 @@ var QuasiMovement = (function() {
     }
     if (pass) {
       var collider = this.collider();
-      var x3 = $gameMap.roundPXWithDirection(x1, dir, this.moveTiles());
-      var y3 = $gameMap.roundPYWithDirection(y1, dir, this.moveTiles());
+      var x3 = $gameMap.roundPXWithDirection(x1, dir, dist);
+      var y3 = $gameMap.roundPYWithDirection(y1, dir, dist);
       collider.moveto(x3, y3);
       var self = this;
       var events = $gameMap.getCharactersAt(collider, function(e) {
@@ -2250,7 +2284,6 @@ var QuasiMovement = (function() {
       this.increaseSteps();
       this._followers.addMove(this._px, this._py, this.realMoveSpeed(), dir);
     }
-    pass;
   };
 
   Game_CharacterBase.prototype.moveDiagonally = function(horz, vert) {
@@ -2290,6 +2323,9 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.fixedMove = function(dir, dist) {
+    if (dir === 5) {
+      dir = this._direction;
+    }
     if ([1, 3, 7, 9].contains(dir)) {
       var diag = {
         1: [4, 2],
@@ -2330,7 +2366,7 @@ var QuasiMovement = (function() {
       this._moveCount++;
       this.increaseSteps();
       if (this.constructor === Game_Player) {
-        this._followers.addMove(this._px, this._py, this.realMoveSpeed(), dir);
+        this._followers.addMove(this._px, this._py, this.realMoveSpeed(), this._direction);
       }
       this._diagonal = this.direction8(horz, vert);
     } else {
@@ -2390,7 +2426,7 @@ var QuasiMovement = (function() {
   };
 
   Game_CharacterBase.prototype.reloadBoxes = function() {
-    delete this._collider;
+    this._collider = null;
     this.collider();
     $gameMap.updateCharacterGrid(this, []);
     this._gridPosition = this.collider().gridEdge();
@@ -2418,21 +2454,21 @@ var QuasiMovement = (function() {
   Game_CharacterBase.prototype.setupCollider = function() {
     this._collider = [];
     if (this.constructor === Game_Player || this.constructor === Game_Follower) {
-      var box  = Movement.playerBox;
+      var box  = QuasiMovement.playerBox;
       var note = this.notes();
     } else if (this.constructor === Game_Event) {
-      var box  = Movement.eventBox;
+      var box  = QuasiMovement.eventBox;
       var note = this.comments();
     } else if (this.constructor === Game_Vehicle) {
       if (this.isBoat()) {
-        var box = Movement.boatBox;
+        var box = QuasiMovement.boatBox;
       } else if (this.isShip()) {
-        var box = Movement.shipBox;
+        var box = QuasiMovement.shipBox;
       } else if (this.isAirship()) {
-        var box = Movement.airshipBox;
+        var box = QuasiMovement.airshipBox;
       }
     } else {
-      var box = Movement.eventBox;
+      var box = QuasiMovement.eventBox;
     }
     if (note) {
       var multibox = /<collider>([\s\S]*)<\/collider>/.exec(note);
@@ -2440,14 +2476,14 @@ var QuasiMovement = (function() {
         multibox  = /<bbox>([\s\S]*)<\/bbox>/.exec(note);
         var oldmulti = true;
       }
-      var singlebox = /<collider[=|:]([0-9a-zA-Z,\s]*)>/.exec(note);
+      var singlebox = /<collider[=|:]([0-9a-zA-Z,-\s]*)>/.exec(note);
       if (!singlebox) {
-        singlebox = /<bbox[=|:]([0-9a-zA-Z,\s]*)>/.exec(note);
+        singlebox = /<bbox[=|:]([0-9a-zA-Z,-\s]*)>/.exec(note);
         var oldsingle = true;
       }
     }
     if (multibox) {
-      var multi = Movement.stringToObjAry(multibox[1]);
+      var multi = QuasiMovement.stringToObjAry(multibox[1]);
       var boxW  = box[0] || 0;
       var boxH  = box[1] || 0;
       var boxOX = box[2] || 0;
@@ -2482,7 +2518,7 @@ var QuasiMovement = (function() {
       var t = "box";
       var i = 0;
       if (singlebox) {
-        var newBox = Movement.stringToAry(singlebox[1]);
+        var newBox = QuasiMovement.stringToAry(singlebox[1]);
         if (!oldsingle) {
           var t = newBox[0].toLowerCase();
           var i = 1;
@@ -2564,43 +2600,43 @@ var QuasiMovement = (function() {
       this.fixedMove(this.direction(), params[0]);
       break;
     case gc.ROUTE_MOVE_DOWN:
-      this.subQmove("2, 1," + Movement.tileSize);
+      this.subQmove("2, 1," + QuasiMovement.tileSize);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_LEFT:
-      this.subQmove("4, 1," + Movement.tileSize);
+      this.subQmove("4, 1," + QuasiMovement.tileSize);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_RIGHT:
-      this.subQmove("6, 1," + Movement.tileSize);
+      this.subQmove("6, 1," + QuasiMovement.tileSize);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_UP:
-      this.subQmove("8, 1," + Movement.tileSize);
+      this.subQmove("8, 1," + QuasiMovement.tileSize);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_LOWER_L:
-      this.subQmove("1, 1," + Movement.diagDist);
+      this.subQmove("1, 1," + QuasiMovement.diagDist);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_LOWER_R:
-      this.subQmove("3, 1," + Movement.diagDist);
+      this.subQmove("3, 1," + QuasiMovement.diagDist);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_UPPER_L:
-      this.subQmove("7, 1," + Movement.diagDist);
+      this.subQmove("7, 1," + QuasiMovement.diagDist);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_UPPER_R:
-      this.subQmove("9, 1," + Movement.diagDist);
+      this.subQmove("9, 1," + QuasiMovement.diagDist);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_FORWARD:
-      this.subQmove("5, 1," + Movement.tileSize);
+      this.subQmove("5, 1," + QuasiMovement.tileSize);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_MOVE_BACKWARD:
-      this.subQmove("0, 1," + Movement.tileSize);
+      this.subQmove("0, 1," + QuasiMovement.tileSize);
       this._moveRouteIndex++;
       break;
     case gc.ROUTE_TURN_DOWN:
@@ -2623,14 +2659,14 @@ var QuasiMovement = (function() {
   Game_Character.prototype.subArc = function(settings) {
     var cmd = {};
     cmd.code = "arc";
-    cmd.parameters = Movement.stringToAry(settings);
+    cmd.parameters = QuasiMovement.stringToAry(settings);
     this._moveRoute.list.splice(this._moveRouteIndex + 1, 0, cmd);
     this._moveRoute.list.splice(this._moveRouteIndex, 1);
     this._moveRouteIndex--;
   };
 
   Game_Character.prototype.subArcTo = function(settings) {
-    settings = Movement.stringToAry(settings);
+    settings = QuasiMovement.stringToAry(settings);
     if (settings.constructor !== Array) settings = [Number(settings)];
     var chara = settings.shift();
     chara = chara === 0 ? $gamePlayer : $gameMap.event(chara);
@@ -2647,9 +2683,8 @@ var QuasiMovement = (function() {
   };
 
   Game_Character.prototype.subMmove = function(settings) {
-    settings = Movement.stringToAry(settings);
+    settings = QuasiMovement.stringToAry(settings);
     var dir  = settings[0];
-    dir = dir === 5 ? this._direction : dir;
     var amt  = settings[1];
     var mult = settings[2] || 1;
     var tot  = amt * mult;
@@ -2668,9 +2703,8 @@ var QuasiMovement = (function() {
   };
 
   Game_Character.prototype.subQmove = function(settings) {
-    settings  = Movement.stringToAry(settings);
+    settings  = QuasiMovement.stringToAry(settings);
     var dir   = settings[0];
-    dir = dir === 5 ? this._direction : dir;
     var amt   = settings[1];
     var multi = settings[2] || 1;
     var tot   = amt * multi;
@@ -2691,7 +2725,7 @@ var QuasiMovement = (function() {
       var cmd = {};
       cmd.code = "fixedMove";
       cmd.parameters = [dir, tot - moved];
-      if (dir ===0) {
+      if (dir === 0) {
         cmd.code = "fixedMoveBackward";
         cmd.parameters = [tot - moved];
       }
@@ -2725,7 +2759,7 @@ var QuasiMovement = (function() {
   };
 
   Game_Character.prototype.moveTowardGridPos = function(x, y) {
-    this.moveTowardPos(x * Movement.tileSize, y * Movement.tileSize);
+    this.moveTowardPos(x * QuasiMovement.tileSize, y * QuasiMovement.tileSize);
   };
 
   Game_Character.prototype.moveTowardPos = function(x, y) {
@@ -2877,7 +2911,7 @@ var QuasiMovement = (function() {
   };
 
   Game_Character.prototype.radianToDirection = function(radian, useDiag) {
-    if (Movement.diagonal && useDiag) {
+    if (QuasiMovement.diagonal && useDiag) {
       if (radian >= Math.PI / 6 && radian < Math.PI / 3) {
         return 9;
       } else if (radian >= 2 * Math.PI / 3 && radian < 5 * Math.PI / 6) {
@@ -2965,12 +2999,12 @@ var QuasiMovement = (function() {
   Game_Player.prototype.moveByInput = function() {
     if (!this.startedMoving() && this.canMove()) {
       if (this.triggerAction()) return;
-      var direction = Movement.diagonal ? Input.dir8 : Input.dir4;
+      var direction = QuasiMovement.diagonal ? Input.dir8 : Input.dir4;
       if (direction > 0) {
         $gameTemp.clearDestination();
         this._pathFind = null;
       } else if ($gameTemp.isDestinationValid()) {
-        if (!Movement.moveOnClick) {
+        if (!QuasiMovement.moveOnClick) {
           $gameTemp.clearDestination();
           return;
         }
@@ -2982,7 +3016,7 @@ var QuasiMovement = (function() {
         this.moveInputHorizontal(direction);
       } else if ([2, 8].contains(direction)){
         this.moveInputVertical(direction);
-      } else if ([1, 3, 7, 9].contains(direction) && Movement.diagonal){
+      } else if ([1, 3, 7, 9].contains(direction) && QuasiMovement.diagonal){
         this.moveInputDiagonal(direction);
       }
     }
@@ -3050,7 +3084,7 @@ var QuasiMovement = (function() {
   Game_Player.prototype.updateDashing = function() {
     if (this.startedMoving()) return;
     if (this.canMove() && !this.isInVehicle() && !$gameMap.isDashDisabled()) {
-      this._dashing = this.isDashButtonPressed() || ($gameTemp.isDestinationValid() && Movement.moveOnClick);
+      this._dashing = this.isDashButtonPressed() || ($gameTemp.isDestinationValid() && QuasiMovement.moveOnClick);
     } else {
       this._dashing = false;
     }
@@ -3276,7 +3310,7 @@ var QuasiMovement = (function() {
     this.setThrough(false);
     this.moveAllBoxes(this.px, this.py);
     var direction = this.direction();
-    if (!Movement.offGrid) {
+    if (!QuasiMovement.offGrid) {
       dist = this.moveTiles();
       if ([4, 6].contains(direction)) {
         if (this.vehicle().collider().width > this.moveTiles()) {
@@ -3638,11 +3672,11 @@ var QuasiMovement = (function() {
         if (this._touchCount === 0 || this._touchCount >= 15) {
           var x = $gameMap.canvasToMapPX(TouchInput.x);
           var y = $gameMap.canvasToMapPY(TouchInput.y);
-          if (!Movement.offGrid) {
-            var ox  = x % Movement.tileSize;
-            var oy  = y % Movement.tileSize;
-            x += Movement.tileSize / 2 - ox;
-            y += Movement.tileSize / 2 - oy;
+          if (!QuasiMovement.offGrid) {
+            var ox  = x % QuasiMovement.tileSize;
+            var oy  = y % QuasiMovement.tileSize;
+            x += QuasiMovement.tileSize / 2 - ox;
+            y += QuasiMovement.tileSize / 2 - oy;
           }
           $gameTemp.setPixelDestination(x, y);
         }
@@ -3667,7 +3701,7 @@ var QuasiMovement = (function() {
     Alias_Scene_Map_updateMain.call(this);
     var key = Imported.Quasi_Input ? "#f10" : "f10";
     if ($gameTemp.isPlaytest() && Input.isTriggered(key)) {
-      Movement.showBoxes = !Movement.showBoxes;
+      QuasiMovement.showBoxes = !QuasiMovement.showBoxes;
     }
   };
 
@@ -3702,8 +3736,10 @@ var QuasiMovement = (function() {
   };
 
   Sprite_Collider.prototype.setupCollider = function(collider) {
+    this._collider = null;
     this._collider = collider;
     if (this._colliderSprite) this.removeChild(this._colliderSprite);
+    this._colliderSprite = null;
     this._colliderSprite = new PIXI.Graphics();
     this.drawCollider();
     this.addChild(this._colliderSprite);
@@ -3744,9 +3780,9 @@ var QuasiMovement = (function() {
   Sprite_Collider.prototype.checkChanges = function() {
     if (this.updatePos) {
       this.x = this._collider.x + this._collider.offsetX();
-      this.x -= $gameMap.displayX() * Movement.tileSize;
+      this.x -= $gameMap.displayX() * QuasiMovement.tileSize;
       this.y = this._collider.y + this._collider.offsetY();
-      this.y -= $gameMap.displayY() * Movement.tileSize;
+      this.y -= $gameMap.displayY() * QuasiMovement.tileSize;
     }
     if (this._cachedw !== this._collider.width ||
         this._cachedh !== this._collider.height) {
@@ -3776,7 +3812,7 @@ var QuasiMovement = (function() {
 
   var Alias_Sprite_Destination_update = Sprite_Destination.prototype.update;
   Sprite_Destination.prototype.update = function() {
-    if (Movement.moveOnClick) {
+    if (QuasiMovement.moveOnClick) {
       Alias_Sprite_Destination_update.call(this);
     } else if (this.visible) {
       this.visible = false;
@@ -3799,13 +3835,13 @@ var QuasiMovement = (function() {
     if (this._colliderData !== this._character.collider()) this.createColliders();
     if (!this._colliderSprite) return;
     if (this._character.constructor == Game_Follower){
-      this._colliderSprite.visible = this._character.isVisible() && Movement.showBoxes;
+      this._colliderSprite.visible = this._character.isVisible() && QuasiMovement.showBoxes;
     } else {
       var erased = false;
       if (this._character.constructor === Game_Event) {
         erased = this._character._erased;
       }
-      this._colliderSprite.visible = this.visible && Movement.showBoxes && !erased;
+      this._colliderSprite.visible = this.visible && QuasiMovement.showBoxes && !erased;
     }
   };
 
@@ -3837,11 +3873,11 @@ var QuasiMovement = (function() {
   Spriteset_Map.prototype.createTileBoxes = function() {
     if (!$gameTemp.isPlaytest()) return;
     this._collisionmap = new Sprite();
-    this._collisionmap.bitmap = Movement._collisionmap;
+    this._collisionmap.bitmap = QuasiMovement._collisionmap;
     this._collisionmap.opacity = 100;
     this.addChild(this._collisionmap);
     this._regionmap = new Sprite();
-    this._regionmap.bitmap = Movement._regionmap;
+    this._regionmap.bitmap = QuasiMovement._regionmap;
     this._collisionmap.addChild(this._regionmap);
   };
 
@@ -3896,14 +3932,16 @@ var QuasiMovement = (function() {
   };
 
   Spriteset_Map.prototype.updateTileBoxes = function() {
-    if (this._collisionmap.bitmap !== Movement._collisionmap) {
-      this._collisionmap.bitmap = Movement._collisionmap;
+    if (this._collisionmap.bitmap !== QuasiMovement._collisionmap) {
+      this._collisionmap.bitmap = null;
+      this._collisionmap.bitmap = QuasiMovement._collisionmap;
     }
-    if (this._regionmap.bitmap !== Movement._regionmap) {
-      this._regionmap.bitmap = Movement._regionmap;
+    if (this._regionmap.bitmap !== QuasiMovement._regionmap) {
+      this._regionmap.bitmap = null;
+      this._regionmap.bitmap = QuasiMovement._regionmap;
     }
-    this._collisionmap.visible = Movement.showBoxes;
-    if (Movement.showBoxes) {
+    this._collisionmap.visible = QuasiMovement.showBoxes;
+    if (QuasiMovement.showBoxes) {
       this._collisionmap.x = -$gameMap.displayX() * $gameMap.tileWidth();
       this._collisionmap.y = -$gameMap.displayY() * $gameMap.tileHeight();
     }
@@ -3912,7 +3950,7 @@ var QuasiMovement = (function() {
   Spriteset_Map.prototype.updateTempColliders = function() {
     if (this._tempColliders.length > 0) {
       for (var i = this._tempColliders.length - 1; i >= 0; i--) {
-        this._tempColliders[i].sprite.visible = Movement.showBoxes;
+        this._tempColliders[i].sprite.visible = QuasiMovement.showBoxes;
         if (!this._tempColliders[i].sprite.isPlaying()) {
           this._tilemap.removeChild(this._tempColliders[i].sprite);
           this._tempColliders.splice(i, 1);
@@ -3959,6 +3997,4 @@ var QuasiMovement = (function() {
     }
     return result;
   };
-
-  return Movement;
 })();
