@@ -388,18 +388,10 @@ function Sprite_Icon() {
 //-----------------------------------------------------------------------------
 // Quasi ABS
 
-var QuasiABS = (function() {
-  var QuasiABS   = {};
-
-  QuasiABS.addAllSkills = function() {
-    var skills = $dataSkills;
-    for (var i = 1; i < skills.length; i++) {
-      $gameParty.leader().learnSkill(i);
-    }
-  };
-
+var QuasiABS = {};
+(function() {
   QuasiABS.proccessParameters = function() {
-    var parameters = $plugins.filter(function(p) { return p.description.contains('<QuasiABS>'); })[0].parameters;
+    var parameters = $plugins.filter(function(p) { return p.description.contains('<QuasiABS>') && p.status; })[0].parameters;
     this.skillKey  = {};
     for (var key in parameters) {
       if (!parameters.hasOwnProperty(key)) continue;
@@ -467,33 +459,33 @@ var QuasiABS = (function() {
   };
 
   // Skill Settings Cache
-  QuasiABS.skillSettings = {};
+  QuasiABS._skillSettings = {};
   QuasiABS.getSkillSettings = function(skill) {
-    if (!this.skillSettings.hasOwnProperty(skill.id)) {
+    if (!this._skillSettings.hasOwnProperty(skill.id)) {
       var settings = /<absSettings>([\s\S]*)<\/absSettings>/i.exec(skill.note);
-      this.skillSettings[skill.id] = false;
+      this._skillSettings[skill.id] = false;
       if (settings) {
         settings = QuasiMovement.stringToObjAry(settings[1], QuasiMovement);
-        this.skillSettings[skill.id] = settings;
-        this.skillSettings[skill.id].cooldown = Number(settings.cooldown) || 0;
-        this.skillSettings[skill.id].through  = Number(settings.through) || 0;
+        this._skillSettings[skill.id] = settings;
+        this._skillSettings[skill.id].cooldown = Number(settings.cooldown) || 0;
+        this._skillSettings[skill.id].through  = Number(settings.through) || 0;
         if (settings.groundtarget) var range = Number(settings.groundtarget);
         if (settings.selecttarget) var range = Number(settings.selecttarget);
-        this.skillSettings[skill.id].groundtarget = settings.groundtarget && !settings.selecttarget;
-        this.skillSettings[skill.id].selecttarget = !settings.groundtarget && settings.selecttarget;
-        this.skillSettings[skill.id].range = range || 0;
-        this.skillSettings[skill.id].passabilityLevel = settings.passabilityLevel || 0;
+        this._skillSettings[skill.id].groundtarget = settings.groundtarget && !settings.selecttarget;
+        this._skillSettings[skill.id].selecttarget = !settings.groundtarget && settings.selecttarget;
+        this._skillSettings[skill.id].range = range || 0;
+        this._skillSettings[skill.id].passabilityLevel = settings.passabilityLevel || 0;
       }
     }
-    return this.skillSettings[skill.id];
+    return this._skillSettings[skill.id];
   };
 
   // Skill Sequence Cache
-  QuasiABS.skillSequence = {};
+  QuasiABS._skillSequence = {};
   QuasiABS.getSkillSequence = function(skill) {
-    if (!this.skillSequence.hasOwnProperty(skill.id)) {
+    if (!this._skillSequence.hasOwnProperty(skill.id)) {
       var settings = /<absSequence>([\s\S]*)<\/absSequence>/i.exec(skill.note);
-      this.skillSequence[skill.id] = [];
+      this._skillSequence[skill.id] = [];
       if (settings) {
         settings = settings[1].split('\n');
         var actions = [];
@@ -507,16 +499,16 @@ var QuasiABS = (function() {
         actions.push("collider hide");
         actions.push("user unlock");
         actions.push("user casting false");
-        this.skillSequence[skill.id] = actions;
+        this._skillSequence[skill.id] = actions;
       }
     }
-    return this.skillSequence[skill.id];
+    return this._skillSequence[skill.id];
   };
 
   // Skill on Damage Cache
-  QuasiABS.skillOnDamage = {};
+  QuasiABS._skillOnDamage = {};
   QuasiABS.getSkillOnDamage = function(skill) {
-    if (!this.skillOnDamage.hasOwnProperty(skill.id)) {
+    if (!this._skillOnDamage.hasOwnProperty(skill.id)) {
       var settings = /<absOnDamage>([\s\S]*)<\/absOnDamage>/i.exec(skill.note);
       var actions = [];
       actions.push("animation 0");
@@ -531,9 +523,9 @@ var QuasiABS = (function() {
           }
         }
       }
-      this.skillOnDamage[skill.id] = actions;
+      this._skillOnDamage[skill.id] = actions;
     }
-    return this.skillOnDamage[skill.id];
+    return this._skillOnDamage[skill.id];
   };
 
   QuasiABS._weaponSkills = {};
@@ -551,9 +543,9 @@ var QuasiABS = (function() {
 
   // AI Range cache
   // Calculates the range for moving skills
-  QuasiABS.aiRange = {};
+  QuasiABS._aiRange = {};
   QuasiABS.getAiRange = function(skill) {
-    if (!this.aiRange.hasOwnProperty(skill.id)) {
+    if (!this._aiRange.hasOwnProperty(skill.id)) {
       var actions = this.getSkillSequence(skill).slice();
       var dist = 0;
       var maxDist = 0;
@@ -570,9 +562,9 @@ var QuasiABS = (function() {
           maxDist = Math.max(dist, maxDist);
         }
       });
-      this.aiRange[skill.id] = maxDist;
+      this._aiRange[skill.id] = maxDist;
     }
-    return this.aiRange[skill.id];
+    return this._aiRange[skill.id];
   };
 
   QuasiABS.enable = function() {
@@ -672,7 +664,7 @@ var QuasiABS = (function() {
   // when changing scenes, ex: openning a menu
   // * Clears when map is changed.
 
-  QuasiABS.Manager.animations = [];
+  QuasiABS.Manager._animations = [];
   QuasiABS.Manager.startAnimation = function(id, x, y) {
     var scene = SceneManager._scene;
     if (scene.constructor !== Scene_Map) return;
@@ -683,7 +675,7 @@ var QuasiABS = (function() {
     if (id < 0) id = 1;
     if (id === 0) return;
     var animation = $dataAnimations[id];
-    this.animations.push(temp);
+    this._animations.push(temp);
     scene._spriteset._tilemap.addChild(temp);
     temp.startAnimation(animation, false, 0);
     temp = null;
@@ -695,11 +687,11 @@ var QuasiABS = (function() {
   // when changing scenes, ex: openning a menu
   // * Clears when map is changed.
 
-  QuasiABS.Manager.pictures = [];
+  QuasiABS.Manager._pictures = [];
   QuasiABS.Manager.addPicture = function(sprite) {
     var scene = SceneManager._scene;
     if (scene.constructor !== Scene_Map) return;
-    this.pictures.push(sprite);
+    this._pictures.push(sprite);
     scene._spriteset._tilemap.addChild(sprite);
     scene = null;
   };
@@ -707,10 +699,10 @@ var QuasiABS = (function() {
   QuasiABS.Manager.removePicture = function(sprite) {
     var scene = SceneManager._scene;
     if (scene.constructor !== Scene_Map) return;
-    var i = this.pictures.indexOf(sprite);
+    var i = this._pictures.indexOf(sprite);
     if (i < 0) return;
-    this.pictures[i] = null;
-    this.pictures.splice(i, 1);
+    this._pictures[i] = null;
+    this._pictures.splice(i, 1);
     scene._spriteset._tilemap.removeChild(sprite);
     sprite = null;
     scene = null;
@@ -733,13 +725,13 @@ var QuasiABS = (function() {
     loot.setGold(value);
   };
 
-  QuasiABS.Manager.cachedEmptyLoot = [];
+  QuasiABS.Manager._cachedEmptyLoot = [];
   QuasiABS.Manager.addLoot = function(loot) {
     var id;
-    for (var i = 0; i < QuasiABS.Manager.cachedEmptyLoot.length; i++) {
-      if (QuasiABS.Manager.cachedEmptyLoot[i]) {
-        id = QuasiABS.Manager.cachedEmptyLoot[i];
-        QuasiABS.Manager.cachedEmptyLoot[i] = null;
+    for (var i = 0; i < QuasiABS.Manager._cachedEmptyLoot.length; i++) {
+      if (QuasiABS.Manager._cachedEmptyLoot[i]) {
+        id = QuasiABS.Manager._cachedEmptyLoot[i];
+        QuasiABS.Manager._cachedEmptyLoot[i] = null;
         break;
       }
     }
@@ -754,9 +746,9 @@ var QuasiABS = (function() {
     var id = loot._eventId;
     if (!id) return;
     $gameMap._events[id] = null;
-    for (var i = 0; i < QuasiABS.Manager.cachedEmptyLoot.length; i++) {
-      if (!QuasiABS.Manager.cachedEmptyLoot[i]) {
-        QuasiABS.Manager.cachedEmptyLoot[i] = id;
+    for (var i = 0; i < QuasiABS.Manager._cachedEmptyLoot.length; i++) {
+      if (!QuasiABS.Manager._cachedEmptyLoot[i]) {
+        QuasiABS.Manager._cachedEmptyLoot[i] = id;
         break;
       }
     }
@@ -768,8 +760,8 @@ var QuasiABS = (function() {
   // since it will be a new spriteset on map change
   // ( This is only called on map change )
   QuasiABS.Manager.clear = function() {
-    this.pictures = [];
-    this.animations = [];
+    this._pictures = [];
+    this._animations = [];
     this._mapId = $gameMap.mapId;
   };
 
@@ -1607,17 +1599,20 @@ var QuasiABS = (function() {
         if (args[1].toLowerCase() === "usebestskill") {
           var skillId = QuasiABS.AI.bestAction(id);
           chara.useSkill(skillId);
+          return;
         }
 
         if (args[1].toLowerCase() === "useskill") {
           var skillId = Number(args[2]) || 0;
           chara.useSkill(skillId);
+          return;
         }
 
         if (args[1].toLowerCase() === "forceskill") {
           var skillId = Number(args[2]);
           if (skillId) {
             chara.forceSkill(skillId);
+            return;
           }
         }
       }
@@ -2859,7 +2854,6 @@ var QuasiABS = (function() {
     this._respawn = Number(this._battler.enemy().meta.respawn) || -1;
     this._battler = null;
     if (!this._dontErase) {
-      console.log(this._dontErase);
       this.erase();
     }
   };
@@ -3308,7 +3302,7 @@ var QuasiABS = (function() {
   };
 
   Spriteset_Map.prototype.addPictures = function() {
-    this._pictures = QuasiABS.Manager.pictures;
+    this._pictures = QuasiABS.Manager._pictures;
     if (this._pictures.length === 0) return;
     for (var i = 0; i < this._pictures.length; i++) {
       if (this.children.indexOf(this._pictures[i]) !== -1) continue;
@@ -3317,7 +3311,7 @@ var QuasiABS = (function() {
   };
 
   Spriteset_Map.prototype.addAnimations = function() {
-    this._tempAnimations = QuasiABS.Manager.animations;
+    this._tempAnimations = QuasiABS.Manager._animations;
     if (this._tempAnimations.length === 0) return;
     for (var i = 0; i < this._tempAnimations.length; i++) {
       if (this.children.indexOf(this._tempAnimations[i]) !== -1) continue;
@@ -3338,7 +3332,7 @@ var QuasiABS = (function() {
   };
 
   Spriteset_Map.prototype.updatePictures = function() {
-    if (this._pictures !== QuasiABS.Manager.pictures) this.addPictures();
+    if (this._pictures !== QuasiABS.Manager._pictures) this.addPictures();
     for (var i = 0; i < this._pictures.length; i++) {
       this._pictures[i].x = this._pictures[i].realX;
       this._pictures[i].x -= $gameMap.displayX() * QuasiMovement.tileSize;
@@ -3348,7 +3342,7 @@ var QuasiABS = (function() {
   };
 
   Spriteset_Map.prototype.updateTempAnimations = function() {
-    if (this._tempAnimations !== QuasiABS.Manager.animations) this.addAnimations();
+    if (this._tempAnimations !== QuasiABS.Manager._animations) this.addAnimations();
     if (this._tempAnimations.length > 0) {
       for (var i = this._tempAnimations.length - 1; i >= 0; i--) {
         this._tempAnimations[i].x = this._tempAnimations[i].realX;
@@ -3378,6 +3372,4 @@ var QuasiABS = (function() {
     this.realX = x;
     this.realY = y;
   };
-
-  return QuasiABS;
 })();
