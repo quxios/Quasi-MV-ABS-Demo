@@ -1,6 +1,6 @@
 Quasi MV ABS Demo
 ====================
-<b>Documentation:</b>
+<b>Documentation:</b><br>
 <a href="http://quasixi.com/quasi-abs-documentation/">quasixi.com</a>
 
 <b>Downloading Demo:</b><br>
@@ -13,6 +13,9 @@ Click on the Download Zip button on the upper right of the page<br>
  * After new project is created, close the new project
  * Copy the files and folders from this Demo folder into the new project and accept to replace files
  * Open project and play test.
+
+<b>Reporting Bugs / Issues:</b><br>
+If you want to report a bug, please create a new issue on <a href="https://github.com/quasixi/Quasi-MV-ABS-Demo/issues">Github</a>. Try to explain the bug as best as possible and any screenshots or videos if you can. If you just have questions, please ask them here at <a href="http://forums.rpgmakerweb.com/index.php?/topic/52049-quasi-abs/">RPGMaker Webs</a>.
 
 <b>TERMS OF USE FOR NON-COMMERCIAL AND COMMERCIAL:</b>
  * Free to use and modify.
