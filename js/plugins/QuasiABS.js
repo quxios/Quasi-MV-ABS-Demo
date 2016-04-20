@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.96
-// Last Update: April 17, 2016
+// Version: 0.961
+// Last Update: April 20, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -14,17 +14,18 @@
 //  - Configure as needed
 //  - Open the Help menu for setup guide or visit one of the following:
 //  - - http://quasixi.com/mv/
-//  - - http://forums.rpgmakerweb.com/ + link
+//  - - https://github.com/quasixi/Quasi-MV-ABS-Demo
+//  - - http://forums.rpgmakerweb.com/index.php?/topic/52049-quasi-abs/
 //
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.96;
+Imported.Quasi_ABS = 0.961;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.96
+ * Version: 0.961
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -350,6 +351,7 @@ Imported.Quasi_ABS = 0.96;
  *
  * Other Links
  *  - http://quasixi.com/mv/
+ *  - https://github.com/quasixi/Quasi-MV-ABS-Demo
  *  - http://forums.rpgmakerweb.com/index.php?/topic/52049-quasi-abs/
  */
 //=============================================================================
@@ -693,7 +695,6 @@ var QuasiABS = {};
     if (scene.constructor !== Scene_Map) return;
     this._pictures.push(sprite);
     scene._spriteset._tilemap.addChild(sprite);
-    scene = null;
   };
 
   QuasiABS.Manager.removePicture = function(sprite) {
@@ -704,8 +705,6 @@ var QuasiABS = {};
     this._pictures[i] = null;
     this._pictures.splice(i, 1);
     scene._spriteset._tilemap.removeChild(sprite);
-    sprite = null;
-    scene = null;
   };
 
   //-----------------------------------------------------------------------------
@@ -798,6 +797,7 @@ var QuasiABS = {};
       var id = self === $gamePlayer ? 0 : self.eventId();
       targets[i].addAgro(id, item.data);
     }
+    self._battler.paySkillCost(item.data);
   };
 
   //-----------------------------------------------------------------------------
@@ -1041,8 +1041,20 @@ var QuasiABS = {};
       case "user":
         this.startUserAction(action);
         break;
+      case "store":
+        this.storePosition();
+        break;
+      case "clearstore":
+        this._stored = null;
+        break;
+      case "teleportto":
+        this.startTeleport(action);
+        break;
       case "move":
         this.startMove(action);
+        break;
+      case "movetostored":
+        this.startMoveToStored(action);
         break;
       case "wave":
         this.startWave(action);
@@ -1337,6 +1349,36 @@ var QuasiABS = {};
     this._character.forceSkill(id, true);
   };
 
+  Skill_Sequencer.prototype.storePosition = function() {
+    this._stored = new Point(this._skill.collider.x, this._skill.collider.y);
+  };
+
+  Skill_Sequencer.prototype.startTeleport = function(action) {
+    var chara = action[1].toLowerCase() === "player" ? $gamePlayer : null;
+    if (chara) {
+      var w = this._skill.collider.width;
+      var h = this._skill.collider.height;
+      var x = chara.cx() - w / 2;
+      var y = chara.cy() - h / 2;
+      this._skill.collider.moveto(x, y);
+    }
+  };
+
+  Skill_Sequencer.prototype.startMoveToStored = function(action) {
+    if (this._stored) {
+      var x1 = this._skill.collider.x;
+      var y1 = this._skill.collider.y;
+      var x2 = this._stored.x;
+      var y2 = this._stored.y;
+      var dx = x2 - x1;
+      var dy = y2 - y1;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      this._skill.radian = Math.atan2(-(y2 - y1), x2 - x1);
+      this._skill.radian += this._skill.radian < 0 ? 2 * Math.PI : 0;
+      this.startMove([null, "forward", dist, action[1], action[2]]);
+    }
+  };
+
   Skill_Sequencer.prototype.startMove = function(action) {
     var dir = action[1];
     var distance = Number(action[2]);
@@ -1628,6 +1670,11 @@ var QuasiABS = {};
     Alias_Game_Map_setup.call(this, mapId);
     if (mapId !== QuasiABS.Manager._mapId) QuasiABS.Manager.clear();
   };
+
+  //-----------------------------------------------------------------------------
+  // Game_Action
+  //
+  // The game object class for a battle action.
 
   var Alias_Game_Action_setSubject = Game_Action.prototype.setSubject;
   Game_Action.prototype.setSubject = function(subject) {
@@ -3135,7 +3182,7 @@ var QuasiABS = {};
     this._colliderSprite.endFill();
     this._colliderSprite.x = -collider.width / 2;
     this._colliderSprite.y = -collider.height / 2;
-    if (!Imported.Quasi_Stage) this._colliderSprite.cacheAsBitmap = true;
+    if (QuasiMovement.cachedCollider) this._colliderSprite.cacheAsBitmap = true;
   };
 
   Sprite_SkillCollider.prototype.update = function() {
