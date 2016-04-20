@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.294
-// Last Update: April 17, 2016
+// Version: 1.295
+// Last Update: April 20, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,12 +22,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.294;
+Imported.Quasi_Movement = 1.295;
 
 //=============================================================================
  /*:
  * @plugindesc Change the way RPG Maker MV handles Movement.
- * Version: 1.294
+ * Version: 1.295
  * <QuasiMovement>
  * @author Quasi       Site: http://quasixi.com
  *
@@ -185,6 +185,11 @@ Imported.Quasi_Movement = 1.294;
  * Set to true or false
  * @default true
  *
+ * @param Cache Colliders as Bitmap
+ * @desc Cache collider sprites as bitmap
+ * Set to true or false
+ * @default true
+ *
  * @help
  * ============================================================================
  * ** Links
@@ -241,6 +246,7 @@ var QuasiMovement = {};
     this.useRegions  = parameters['Use Regions Boxes'].toLowerCase() === 'true';
     this.showBoxes   = parameters['Show Boxes'].toLowerCase() === 'true';
     this.drawTileBoxes = parameters['Draw Tile Boxes'].toLowerCase() === 'true';
+    this.cachedCollider = parameters['Cache Colliders as Bitmap'].toLowerCase() === 'true';
     this.tileBoxes   = {
       1537: [48, 6, 0, 42],
       1538: [6, 48],
@@ -441,6 +447,14 @@ var QuasiMovement = {};
   };
 
   Polygon_Collider.prototype.isCircle = function() {
+    return false;
+  };
+
+  Polygon_Collider.prototype.isPolygon = function() {
+    return true;
+  };
+
+  Polygon_Collider.prototype.isBox = function() {
     return false;
   };
 
@@ -730,6 +744,14 @@ var QuasiMovement = {};
     this.rotate(0);
   };
 
+  Box_Collider.prototype.isPolygon = function() {
+    return false;
+  };
+
+  Box_Collider.prototype.isBox = function() {
+    return true;
+  };
+
   QuasiMovement.Box_Collider = Box_Collider;
 
   //-----------------------------------------------------------------------------
@@ -772,6 +794,10 @@ var QuasiMovement = {};
 
   Circle_Collider.prototype.isCircle = function() {
     return true;
+  };
+
+  Circle_Collider.prototype.isPolygon = function() {
+    return false;
   };
 
   Circle_Collider.prototype.scale = function(zX, zY) {
@@ -3772,7 +3798,7 @@ var QuasiMovement = {};
       this._colliderSprite.drawPolygon(collider.baseVertices);
     }
     this._colliderSprite.endFill();
-    if (!Imported.Quasi_Stage) this._colliderSprite.cacheAsBitmap = true;
+    if (QuasiMovement.cachedCollider) this._colliderSprite.cacheAsBitmap = true;
   };
 
   Sprite_Collider.prototype.setDuration = function(duration) {
@@ -3919,6 +3945,7 @@ var QuasiMovement = {};
     for (var i = 0, j = this._tempColliders.length - 1; i >= 0; i--) {
       if (this._tempColliders[i].sprite.collider === collider) {
         this._tilemap.removeChild(this._tempColliders[i].sprite);
+        this._tempColliders[i].sprite = null;
         this._tempColliders.splice(i, 1);
       }
     }
@@ -3930,6 +3957,7 @@ var QuasiMovement = {};
     }
     for (var i = this._tempColliders.length - 1; i >= 0; i--) {
       this._tilemap.removeChild(this._tempColliders[i].sprite);
+      this._tempColliders[i].sprite = null;
       this._tempColliders.splice(i, 1);
     }
   };
@@ -3965,6 +3993,7 @@ var QuasiMovement = {};
         this._tempColliders[i].sprite.visible = QuasiMovement.showBoxes;
         if (!this._tempColliders[i].sprite.isPlaying()) {
           this._tilemap.removeChild(this._tempColliders[i].sprite);
+          this._tempColliders[i].sprite = null;
           this._tempColliders.splice(i, 1);
         }
       }
@@ -3982,12 +4011,6 @@ var QuasiMovement = {};
   Bitmap.prototype.initialize = function(width, height) {
     Alias_Bitmap_initialize.call(this, width, height);
     this._pixelData = [];
-  };
-
-  var Alias_Bitmap_onLoad = Bitmap.prototype._onLoad;
-  Bitmap.prototype._onLoad = function() {
-    this.addLoadListener(this._setPixelData.bind(this));
-    return Alias_Bitmap_onLoad.call(this);
   };
 
   Bitmap.prototype._setPixelData = function () {
