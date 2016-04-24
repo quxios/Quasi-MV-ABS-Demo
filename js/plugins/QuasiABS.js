@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.961
-// Last Update: April 20, 2016
+// Version: 0.962
+// Last Update: April 24, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,7 +20,7 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.961;
+Imported.Quasi_ABS = 0.962;
 
 //=============================================================================
  /*:
@@ -797,7 +797,6 @@ var QuasiABS = {};
       var id = self === $gamePlayer ? 0 : self.eventId();
       targets[i].addAgro(id, item.data);
     }
-    self._battler.paySkillCost(item.data);
   };
 
   //-----------------------------------------------------------------------------
@@ -983,7 +982,7 @@ var QuasiABS = {};
     if (this._skill.pictureCollider) {
       this._skill.pictureCollider.move(x3, y3);
     }
-    if (this._skill.trail) {
+    if (this._skill.trail && false) {
       var x = this._skill.trail.startX;
       var y = this._skill.trail.startY;
       var x4 = x - x3;
@@ -1445,6 +1444,7 @@ var QuasiABS = {};
   Skill_Sequencer.prototype.showTrail = function(action) {
     this._skill.trail = new TilingSprite();
     this._skill.trail.bitmap = ImageManager.loadPicture(action[1]);
+    this._skill.trail.move(0, 0, Graphics.width, Graphics.height);
     this._skill.trail.rotatable = action[2] === "true";
     this._skill.trail.originDirection = Number(action[3]);
     this._skill.trail.z = 2;
@@ -1460,8 +1460,8 @@ var QuasiABS = {};
       skill.trail.anchor.x = 0.5;
       skill.trail.anchor.y = 0.5;
       skill.trail.move(x, y, w, h);
+      QuasiABS.Manager.addPicture(skill.trail);
     });
-    QuasiABS.Manager.addPicture(this._skill.trail);
   };
 
   Skill_Sequencer.prototype.setCollider = function(action) {
@@ -2260,6 +2260,7 @@ var QuasiABS = {};
 
   Game_CharacterBase.prototype.onTargetingEnd = function() {
     var skill = this._groundtargeting;
+    this._battler.paySkillCost(skill.data);
     this._activeSkills.push(skill);
     this._skillCooldowns[skill.data.id] = skill.settings.cooldown;
     SceneManager._scene.addTempCollider(skill.collider, skill.sequence.length);
@@ -2324,14 +2325,15 @@ var QuasiABS = {};
 
   Game_CharacterBase.prototype.beforeSkill = function(skillId) {
     // Placeholder method, might need for addons
-    // This method is for when .forceSkill() is called only from
-    // .useSkill()
+    // This function only runs from .useSkill() not .forceSkill()
   };
 
   Game_CharacterBase.prototype.afterSkill = function(skillId) {
     // Placeholder method, might need for addons
-    // This method is for when .forceSkill() is called only from
-    // .useSkill()
+    // This function only runs from .useSkill() not .forceSkill()
+    if (!this._groundtargeting) {
+      this._battler.paySkillCost($dataSkills[skillId]);
+    }
   };
 
   // Sets up the skill object and gets it's abs settings
@@ -2361,7 +2363,7 @@ var QuasiABS = {};
     }
     this._activeSkills.push(skill);
     this._skillCooldowns[skillId] = skill.settings.cooldown;
-    SceneManager._scene.addTempCollider(skill.collider, skill.sequence.length);
+    SceneManager._scene.addTempCollider(skill.collider, skill.sequence.length + 60);
   };
 
   Game_CharacterBase.prototype.makeTargetingSkill = function(skill) {
