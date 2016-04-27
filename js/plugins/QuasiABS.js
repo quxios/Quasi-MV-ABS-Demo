@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.962
-// Last Update: April 24, 2016
+// Version: 0.963
+// Last Update: April 26, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.962;
+Imported.Quasi_ABS = 0.963;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.961
+ * Version: 0.963
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -713,10 +713,12 @@ var QuasiABS = {};
   // when changing scenes, ex: openning a menu
   // * Clears when map is changed.
 
-  QuasiABS.Manager.createItem = function(x, y, itemId) {
+  QuasiABS.Manager.createItem = function(x, y, itemId, type) {
     var loot = new Game_Loot(x, y);
-    var item = $dataItems[itemId];
-    loot.setItem(item);
+    var data = $dataItems;
+    if (type === 1) data = $dataWeapons;
+    if (type === 2) data = $dataArmors;
+    loot.setItem(data[itemId]);
   };
 
   QuasiABS.Manager.createGold = function(x, y, value) {
@@ -2912,7 +2914,10 @@ var QuasiABS = {};
     this._battler.makeDropItems().forEach(function(item) {
       x = this.x + (Math.random() / 2) - (Math.random() / 2);
       y = this.y + (Math.random() / 2) - (Math.random() / 2);
-      QuasiABS.Manager.createItem(x, y, item.id);
+      var type = 0;
+      if (DataManager.isWeapon(item)) type = 1;
+      if (DataManager.isArmor(item))  type = 2;
+      QuasiABS.Manager.createItem(x, y, item.id, type);
     }, this);
     if (this._battler.gold() > 0) {
       x = this.x + (Math.random() / 2) - (Math.random() / 2);
