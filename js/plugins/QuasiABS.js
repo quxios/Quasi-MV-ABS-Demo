@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.963
-// Last Update: April 26, 2016
+// Version: 0.964
+// Last Update: April 28, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.963;
+Imported.Quasi_ABS = 0.964;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.963
+ * Version: 0.964
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -1129,6 +1129,9 @@ var QuasiABS = {};
       case "forceskill":
         this.userForceSkill(action);
         break;
+      case "animation":
+        this.userAnimation(action);
+        break;
     }
   };
 
@@ -1140,7 +1143,7 @@ var QuasiABS = {};
       case "user":
         this.startDamageUserAction(action, targets);
         break;
-      case "animation":
+      case "animationtarget":
         this._skill.animationTarget = Number(action[1]) || 0;
         break;
     }
@@ -1490,7 +1493,14 @@ var QuasiABS = {};
     QuasiABS.Manager.startAnimation(id, x, y);
   };
 
-  Skill_Sequencer.prototype.startSE = function(ction) {
+  Skill_Sequencer.prototype.userAnimation = function(action) {
+    var id = Number(action[2]);
+    var x = this._character.cx();
+    var y = this._character.cy();
+    QuasiABS.Manager.startAnimation(id, x, y);
+  };
+
+  Skill_Sequencer.prototype.startSE = function(action) {
     var se ={};
     se.name = action[1];
     se.volume = Number(action[2]) || 90;
