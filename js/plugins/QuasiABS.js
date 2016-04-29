@@ -1,6 +1,6 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.964
+// Version: 0.965
 // Last Update: April 28, 2016
 //============================================================================
 // ** Terms of Use
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.964;
+Imported.Quasi_ABS = 0.965;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.964
+ * Version: 0.965
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -984,7 +984,7 @@ var QuasiABS = {};
     if (this._skill.pictureCollider) {
       this._skill.pictureCollider.move(x3, y3);
     }
-    if (this._skill.trail && false) {
+    if (this._skill.trail) {
       var x = this._skill.trail.startX;
       var y = this._skill.trail.startY;
       var x4 = x - x3;
