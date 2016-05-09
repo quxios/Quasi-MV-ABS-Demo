@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.06
-// Last Update: April 11, 2016
+// Version: 1.07
+// Last Update: May 9, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,12 +17,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.06;
+Imported.Quasi_Sprite = 1.07;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.05
+ * Version 1.07
  * @author Quasi      Site: http://quasixi.com
  *
  * @help
@@ -117,8 +117,8 @@ var QuasiSprite = { ready: false };
 
   var Alias_Game_CharacterBase_animationWait = Game_CharacterBase.prototype.animationWait;
   Game_CharacterBase.prototype.animationWait = function() {
-    if (this._qSprite && this._qSprite.poses[this._pose]) {
-      var pose = this._qSprite.poses[this._pose];
+    if (this.qSprite() && this.qSprite().poses[this._pose]) {
+      var pose = this.qSprite().poses[this._pose];
       if (pose.adjust) {
         return (pose.speed - this.realMoveSpeed()) * 3;
       }
@@ -137,7 +137,7 @@ var QuasiSprite = { ready: false };
   Game_CharacterBase.prototype.updatePose = function(wasMoving) {
     var isMoving = wasMoving || this.isMoving();
     if (this._posePlaying) return;
-    if (this._qSprite) {
+    if (this.qSprite()) {
       var dir = this._direction;
       if (Imported.Quasi_Movement && this.isDiagonal()) {
         var diag = this.isDiagonal();
@@ -182,7 +182,7 @@ var QuasiSprite = { ready: false };
 
   var Alias_Game_CharacterBase_updatePattern = Game_CharacterBase.prototype.updatePattern;
   Game_CharacterBase.prototype.updatePattern = function() {
-    if (this._isIdle || this._posePlaying || this._qSprite) {
+    if (this._isIdle || this._posePlaying || this.qSprite()) {
       this._pattern++;
       if (this._pattern === this.maxPattern()) {
         if (this._posePlaying) {
@@ -204,19 +204,19 @@ var QuasiSprite = { ready: false };
 
   var Alias_Game_CharacterBase_maxPattern = Game_CharacterBase.prototype.maxPattern;
   Game_CharacterBase.prototype.maxPattern = function() {
-    if (this._qSprite) {
-      return this._qSprite.poses[this._pose].pattern.length;
+    if (this.qSprite()) {
+      return this.qSprite().poses[this._pose].pattern.length;
     }
     return Alias_Game_CharacterBase_maxPattern.call(this);
   };
 
   Game_CharacterBase.prototype.resetPattern = function() {
-    this._qSprite ? this.setPattern(0) : this.setPattern(1);
+    this.qSprite() ? this.setPattern(0) : this.setPattern(1);
   };
 
   Game_CharacterBase.prototype.hasPose = function(pose) {
-    if (this._qSprite) {
-      return this._qSprite.poses.hasOwnProperty(pose);
+    if (this.qSprite()) {
+      return this.qSprite().poses.hasOwnProperty(pose);
     }
     return false;
   };
@@ -225,11 +225,10 @@ var QuasiSprite = { ready: false };
   Game_CharacterBase.prototype.setImage = function(characterName, characterIndex) {
     Alias_Game_CharacterBase_setImage.call(this, characterName, characterIndex);
     this._isQChara = undefined;
-    this._qSprite = this.isQCharacter() ? QuasiSprite.json[this.isQCharacter()] : null;
   };
 
   Game_CharacterBase.prototype.playPose = function(pose, lock, pause) {
-    if (this._qSprite) {
+    if (this.qSprite()) {
       var dir = this._direction;
       if (Imported.Quasi_Movement && this.isDiagonal()) {
         dir = this.isDiagonal();
@@ -248,7 +247,7 @@ var QuasiSprite = { ready: false };
   };
 
   Game_CharacterBase.prototype.loopPose = function(pose, lock) {
-    if (this._qSprite) {
+    if (this.qSprite()) {
       var dir = this._direction;
       if (Imported.Quasi_Movement && this.isDiagonal()) {
         dir = this.isDiagonal();
@@ -278,6 +277,10 @@ var QuasiSprite = { ready: false };
       this._isQChara = this._characterName.match(/^#(.+?)-/);
     }
     return this._isQChara ? this._isQChara[1] : false;
+  };
+
+  Game_CharacterBase.prototype.qSprite = function() {
+    return this.isQCharacter() ? QuasiSprite.json[this.isQCharacter()] : null;
   };
 
   //-----------------------------------------------------------------------------
@@ -316,11 +319,11 @@ var QuasiSprite = { ready: false };
   var Alias_Sprite_Character_characterPatternX = Sprite_Character.prototype.characterPatternX;
   Sprite_Character.prototype.characterPatternX = function() {
     if (this._character.isQCharacter()) {
-      var pose = this._character._qSprite.poses[this._character._pose];
+      var pose = this._character.qSprite().poses[this._character._pose];
       if (!pose) return 0;
       var pattern = pose.pattern;
       var i = pattern[this._character._pattern];
-      var x = i % this._character._qSprite.cols;
+      var x = i % this._character.qSprite().cols;
       return x;
     }
     return Alias_Sprite_Character_characterPatternX.call(this);
@@ -329,12 +332,12 @@ var QuasiSprite = { ready: false };
   var Alias_Sprite_Character_characterPatternY = Sprite_Character.prototype.characterPatternY;
   Sprite_Character.prototype.characterPatternY = function() {
     if (this._character.isQCharacter()) {
-      var pose = this._character._qSprite.poses[this._character._pose];
+      var pose = this._character.qSprite().poses[this._character._pose];
       if (!pose) return 0;
       var pattern = pose.pattern;
       var i = pattern[this._character._pattern];
-      var x = i % this._character._qSprite.cols;
-      var y = (i - x) / this._character._qSprite.cols;
+      var x = i % this._character.qSprite().cols;
+      var y = (i - x) / this._character.qSprite().cols;
       return y;
     }
     return Alias_Sprite_Character_characterPatternY.call(this);
@@ -343,7 +346,7 @@ var QuasiSprite = { ready: false };
   var Alias_Sprite_Character_patternWidth = Sprite_Character.prototype.patternWidth;
   Sprite_Character.prototype.patternWidth = function() {
     if (this._character.isQCharacter()) {
-      return this.bitmap.width / this._character._qSprite.cols;
+      return this.bitmap.width / this._character.qSprite().cols;
     }
     return Alias_Sprite_Character_patternWidth.call(this);
   };
@@ -351,7 +354,7 @@ var QuasiSprite = { ready: false };
   var Alias_Sprite_Character_patternHeight = Sprite_Character.prototype.patternHeight;
   Sprite_Character.prototype.patternHeight = function() {
     if (this._character.isQCharacter()) {
-      return this.bitmap.height / this._character._qSprite.rows;
+      return this.bitmap.height / this._character.qSprite().rows;
     }
     return Alias_Sprite_Character_patternHeight.call(this);
   };
@@ -372,7 +375,7 @@ var QuasiSprite = { ready: false };
   Sprite_Actor.prototype.startMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
-      var motion = this._qSprite.poses[pose];
+      var motion = this.qSprite().poses[pose];
       if (motion) {
         this._pose = pose;
         this._pattern = 0;
@@ -391,7 +394,7 @@ var QuasiSprite = { ready: false };
     if (oldBattlerName !== this._battlerName) {
       this._isQChara = undefined;
       if (this.isQCharacter()) {
-        this._qSprite = QuasiSprite.json[this.isQCharacter()];
+        this.qSprite() = QuasiSprite.json[this.isQCharacter()];
       }
     }
   };
@@ -402,7 +405,7 @@ var QuasiSprite = { ready: false };
       Sprite_Battler.prototype.updateFrame.call(this);
       var bitmap = this._mainSprite.bitmap;
       if (bitmap) {
-        var motion = this._qSprite.poses[this._pose];
+        var motion = this.qSprite().poses[this._pose];
         if (!motion) {
           this._mainSprite.visible = false;
           return;
@@ -410,10 +413,10 @@ var QuasiSprite = { ready: false };
         this._mainSprite.visible = true;
         var pattern = motion.pattern;
         var i = pattern[this._pattern];
-        var cw = bitmap.width / this._qSprite.cols;
-        var ch = bitmap.height / this._qSprite.rows;
-        var cx = i % this._qSprite.cols;
-        var cy = (i - cx) / this._qSprite.cols;
+        var cw = bitmap.width / this.qSprite().cols;
+        var ch = bitmap.height / this.qSprite().rows;
+        var cx = i % this.qSprite().cols;
+        var cy = (i - cx) / this.qSprite().cols;
         this._mainSprite.setFrame(cx * cw, cy * ch, cw, ch);
       }
     } else {
@@ -424,7 +427,7 @@ var QuasiSprite = { ready: false };
   var Alias_Sprite_Actor_updateMotionCount = Sprite_Actor.prototype.updateMotionCount;
   Sprite_Actor.prototype.updateMotionCount = function() {
     if (this.isQCharacter()) {
-      var motion = this._qSprite.poses[this._pose];
+      var motion = this.qSprite().poses[this._pose];
       if (!motion) return;
       var poseWait = motion.speed;
       if (++this._motionCount >= poseWait) {
@@ -478,7 +481,7 @@ if (Imported.YEP_X_ActSeqPack2) {
   Sprite_Actor.prototype.forceMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
-      var motion = this._qSprite.poses[pose];
+      var motion = this.qSprite().poses[pose];
       if (motion) {
         this._pose = pose;
         this._pattern = 0;
