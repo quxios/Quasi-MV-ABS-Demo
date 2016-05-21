@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.07
-// Last Update: May 9, 2016
+// Version: 1.08
+// Last Update: May 21, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,13 +17,18 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.07;
+Imported.Quasi_Sprite = 1.08;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.07
+ * Version 1.08
  * @author Quasi      Site: http://quasixi.com
+ *
+ * @param File Name Identifier
+ * @desc Set the file name identifier for QSprites
+ * Default: #{config}-
+ * @default #{config}-
  *
  * @help
  * ============================================================================
@@ -274,7 +279,9 @@ var QuasiSprite = { ready: false };
 
   Game_CharacterBase.prototype.isQCharacter = function() {
     if (this._isQChara === undefined) {
-      this._isQChara = this._characterName.match(/^#(.+?)-/);
+      var string = "#{config}-".replace("{config}", "(.+?)");
+      var regex  = new RegExp(string);
+      this._isQChara = this._characterName.match(regex);
     }
     return this._isQChara ? this._isQChara[1] : false;
   };
@@ -366,7 +373,9 @@ var QuasiSprite = { ready: false };
 
   Sprite_Actor.prototype.isQCharacter = function() {
     if (this._isQChara === undefined) {
-      this._isQChara = this._battlerName.match(/^#(.+?)-/);
+      var string = "#{config}-".replace("{config}", "(.+?)");
+      var regex  = new RegExp(string);
+      this._isQChara = this._battlerName.match(regex);
     }
     return this._isQChara ? this._isQChara[1] : false;
   };
