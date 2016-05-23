@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.08
-// Last Update: May 21, 2016
+// Version: 1.081
+// Last Update: May 23, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,12 +17,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.08;
+Imported.Quasi_Sprite = 1.081;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.08
+ * Version 1.07
  * @author Quasi      Site: http://quasixi.com
  *
  * @param File Name Identifier
@@ -158,7 +158,9 @@ var QuasiSprite = { ready: false };
         }
         this._pose = "idle" + dir;
       } else {
-        if (!isMoving) this._pattern = 0;
+        if (!isMoving) {
+          this._pattern = 0;
+        }
         if (Imported.Quasi_Movement && this.isDiagonal()) {
           dir = this.isDiagonal();
         }
@@ -189,7 +191,7 @@ var QuasiSprite = { ready: false };
   Game_CharacterBase.prototype.updatePattern = function() {
     if (this._isIdle || this._posePlaying || this.qSprite()) {
       this._pattern++;
-      if (this._pattern === this.maxPattern()) {
+      if (this._pattern >= this.maxPattern()) {
         if (this._posePlaying) {
           if (this._posePlaying.pause) {
             this._pattern--;
@@ -217,6 +219,14 @@ var QuasiSprite = { ready: false };
 
   Game_CharacterBase.prototype.resetPattern = function() {
     this.qSprite() ? this.setPattern(0) : this.setPattern(1);
+  };
+
+  var Alias_Game_CharacterBase_straighten = Game_CharacterBase.prototype.straighten;
+  Game_CharacterBase.prototype.straighten = function() {
+    Alias_Game_CharacterBase_straighten.call(this);
+    if (this.qSprite() && (this.hasWalkAnime() || this.hasStepAnime())) {
+      this._pattern = 0;
+    }
   };
 
   Game_CharacterBase.prototype.hasPose = function(pose) {
