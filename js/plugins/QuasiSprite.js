@@ -1,6 +1,6 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.081
+// Version: 1.082
 // Last Update: May 23, 2016
 //============================================================================
 // ** Terms of Use
@@ -17,12 +17,13 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.081;
+Imported.Quasi_Sprite = 1.082;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.07
+ * Version 1.082
+ * <QuasiSprite>
  * @author Quasi      Site: http://quasixi.com
  *
  * @param File Name Identifier
@@ -49,6 +50,9 @@ Imported.Quasi_Sprite = 1.081;
 
 var QuasiSprite = { ready: false };
 (function(QuasiSprite) {
+  var _params = $plugins.filter(function(p) { return p.description.contains('<QuasiSprite>') && p.status; })[0].parameters;
+  var _identifier = _params["File Name Identifier"] || "#{config}-";
+
   QuasiSprite.loadSettings = function() {
     var xhr = new XMLHttpRequest();
     var url = 'data/SpriteAnim.json';
@@ -246,7 +250,10 @@ var QuasiSprite = { ready: false };
     if (this.qSprite()) {
       var dir = this._direction;
       if (Imported.Quasi_Movement && this.isDiagonal()) {
-        dir = this.isDiagonal();
+        var diag = this.isDiagonal();
+        if (this.hasPose(pose + diag)) {
+          dir = diag;
+        }
       }
       pose += dir;
     }
@@ -289,7 +296,7 @@ var QuasiSprite = { ready: false };
 
   Game_CharacterBase.prototype.isQCharacter = function() {
     if (this._isQChara === undefined) {
-      var string = "#{config}-".replace("{config}", "(.+?)");
+      var string = _identifier.replace("{config}", "(.+?)");
       var regex  = new RegExp(string);
       this._isQChara = this._characterName.match(regex);
     }
