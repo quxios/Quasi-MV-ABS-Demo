@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.295
-// Last Update: April 20, 2016
+// Version: 1.296
+// Last Update: May 24, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,12 +22,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.295;
+Imported.Quasi_Movement = 1.296;
 
 //=============================================================================
  /*:
  * @plugindesc Change the way RPG Maker MV handles Movement.
- * Version: 1.295
+ * Version: 1.296
  * <QuasiMovement>
  * @author Quasi       Site: http://quasixi.com
  *
@@ -328,7 +328,7 @@ var QuasiMovement = {};
     ary.forEach(function(e, i, a) {
       var s = /^(.*):(.*)/.exec(e);
       if (s) {
-        var key = newKey = s[1];
+        var key, newKey = s[1];
         if (obj.hasOwnProperty(key)) {
           var i = 1;
           while (obj.hasOwnProperty(newKey)) {
@@ -1099,7 +1099,7 @@ var QuasiMovement = {};
     var cStart = 256;
     var dStart = 512;
     var eStart = 768;
-    var w = h = QuasiMovement.tileSize;
+    var w, h = QuasiMovement.tileSize;
     for (var pos in QuasiMovement._tilesetCM) {
       if (!QuasiMovement._tilesetCM.hasOwnProperty(pos)) return;
       var start, bitmap;
@@ -4019,7 +4019,7 @@ var QuasiMovement = {};
 
   // Optimized version of getPixel()
   Bitmap.prototype.getColor = function(x, y) {
-    if (!this._pixelData) this._setPixelData();
+    if (this._pixelData.length === 0) this._setPixelData();
     x = Math.floor(x);
     y = Math.floor(y);
     if (x >= this.width || x < 0 || y >= this.height || y < 0 || this._pixelData.length === 0) {
