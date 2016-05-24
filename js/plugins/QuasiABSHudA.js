@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS Hud A
-// Version: 1.01
-// Last Update: January 13, 2016
+// Version: 1.02
+// Last Update: May 21, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -18,12 +18,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABSHudA = 1.01;
+Imported.Quasi_ABSHudA = 1.02;
 
 //=============================================================================
  /*:
  * @plugindesc Adds a hud for Quasi ABS ( Version A )
- * Version: 1.01
+ * Version: 1.02
  * <QuasiABSHudA>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -87,7 +87,7 @@ var QuasiABSHudA = (function() {
   QuasiABSHudA.requestRefresh = true;
 
   QuasiABSHudA.show = function(bool) {
-    $gameSystem.showABSHud = bool;
+    $gameSystem._showABSHud = bool;
   };
 
   //-----------------------------------------------------------------------------
@@ -98,12 +98,24 @@ var QuasiABSHudA = (function() {
   var Alias_Game_System_initialize = Game_System.prototype.initialize;
   Game_System.prototype.initialize = function() {
     Alias_Game_System_initialize.call(this);
-    this.showABSHud = true;
+    this._showABSHud = true;
+  };
+
+  var Alias_Game_System_loadClassABSKeys = Game_System.prototype.loadClassABSKeys;
+  Game_System.prototype.loadClassABSKeys = function() {
+    Alias_Game_System_loadClassABSKeys.call(this);
+    QuasiABSHudA.requestRefresh = true;
   };
 
   var Alias_Game_System_changeABSSkill = Game_System.prototype.changeABSSkill;
   Game_System.prototype.changeABSSkill = function(skillNumber, skillId, forced) {
     Alias_Game_System_changeABSSkill.call(this, skillNumber, skillId, forced);
+    QuasiABSHudA.requestRefresh = true;
+  };
+
+  var Alias_Game_System_changeABSWeaponSkills = Game_System.prototype.changeABSWeaponSkills;
+  Game_System.prototype.changeABSWeaponSkills = function(skillNumber, skillId, forced) {
+    Alias_Game_System_changeABSWeaponSkills.call(this, skillNumber, skillId, forced);
     QuasiABSHudA.requestRefresh = true;
   };
 
@@ -122,11 +134,7 @@ var QuasiABSHudA = (function() {
   Game_Interpreter.prototype.pluginCommand = function(command, args) {
     if (command.toLowerCase() === "qabs") {
       if (args[0].toLowerCase() === "showhud") {
-        if (args[1] === "true") {
-          $gameSystem.showABSHud = true;
-        } else {
-          $gameSystem.showABSHud = false;
-        }
+        QuasiABSHudA.show(args[1] === "true");
         return;
       }
     }
@@ -175,7 +183,7 @@ var QuasiABSHudA = (function() {
     this.y = Graphics.height - 36;
     this._buttons = [];
     this._over = 0;
-    this._absKeys = $gameSystem.absKeys;
+    this._absKeys = $gameSystem.absKeys();
     this._actorId = $gameParty.leader()._actorId;
     this.createKeys();
   };
@@ -302,7 +310,7 @@ var QuasiABSHudA = (function() {
 
   Sprite_ABSKeys.prototype.update = function() {
     Sprite_Base.prototype.update.call(this);
-    if (!$gameSystem.showABSHud) {
+    if (!$gameSystem._showABSHud) {
       this.visible = false;
       return;
     }
@@ -337,16 +345,14 @@ var QuasiABSHudA = (function() {
   };
 
   Sprite_ABSKeys.prototype.needsRefresh = function() {
-    if (this._absKeys !== $gameSystem.absKeys) {
-      this._absKeys = $gameSystem.absKeys;
-      this.createKeys();
-    }
     if (this._actorId !== $gameParty.leader()._actorId) {
       this._actorId = $gameParty.leader()._actorId;
+      this._absKeys = $gameSystem.absKeys();
       this.createKeys();
     }
     if (QuasiABSHudA.requestRefresh) {
       QuasiABSHudA.requestRefresh = false;
+      this._absKeys = $gameSystem.absKeys();
       this.createKeys();
     }
   };
@@ -484,7 +490,7 @@ var QuasiABSHudA = (function() {
     var w = this.width - x - 4; // 4 is padding
     this.bitmap.fontSize = 18;
     var formula = this._skill.damage.formula;
-    formula = formula.replace(/b.(\w+)/, "0");
+    formula = formula.replace(/b.(\w+)/g, "0");
     var a = $gamePlayer.actor();
     var v = $gameVariables._data;
     var dmg = eval(formula);
