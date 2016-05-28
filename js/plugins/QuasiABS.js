@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.97
-// Last Update: May 24, 2016
+// Version: 0.98
+// Last Update: May 27, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.97;
+Imported.Quasi_ABS = 0.98;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.97
+ * Version: 0.98
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -368,6 +368,10 @@ if (!Imported.Quasi_Movement) {
 // New Classes
 
 function Game_Loot() {
+  this.initialize.apply(this, arguments);
+}
+
+function Game_EventCopy() {
   this.initialize.apply(this, arguments);
 }
 
@@ -726,6 +730,32 @@ var QuasiABS = {};
     loot.setGold(value);
   };
 
+  QuasiABS.Manager.loadEvent = function(mapId, eventId, x, y) {
+    var xhr = new XMLHttpRequest();
+    var url = 'data/' + 'Map%1.json'.format(mapId.padZero(3));
+    xhr.open('GET', url);
+    xhr.overrideMimeType('application/json');
+    xhr.onload = function() {
+      if (xhr.status < 400) {
+        var data = JSON.parse(xhr.responseText);
+        var event = data.events[eventId];
+        event.x = x || event.x;
+        event.y = y || event.y;
+        QuasiABS.Manager.createEvent(event);
+      }
+    };
+    xhr.send();
+  };
+
+  QuasiABS.Manager.createEvent = function(eventData) {
+    var event = new Game_EventCopy(this._mapId, eventData);
+    this.addEvent(event);
+    var spriteset = SceneManager._scene._spriteset;
+    var sprite = new Sprite_Character(event);
+    spriteset._characterSprites.push(sprite);
+    spriteset._tilemap.addChild(sprite);
+  };
+
   QuasiABS.Manager._cachedEmptyEvent = [];
   QuasiABS.Manager.addEvent = function(event) {
     var id;
@@ -746,6 +776,18 @@ var QuasiABS = {};
   QuasiABS.Manager.removeEvent = function(event) {
     var id = event._eventId;
     if (!id) return;
+    $gameMap.removeFromCharacterGrid(event);
+    var spriteset = SceneManager._scene._spriteset;
+    var spriteCharas = spriteset._characterSprites;
+    for (var i = 0; i < spriteCharas.length; i++) {
+      if (spriteCharas[i] && spriteCharas[i]._character === event) {
+        spriteset._tilemap.removeChild(spriteCharas[i]);
+        spriteCharas[i] = null;
+        spriteCharas.splice(i, 1);
+        break;
+      }
+    }
+    $gameMap._events[id].clearABS();
     $gameMap._events[id] = null;
     for (var i = 0; i < QuasiABS.Manager._cachedEmptyEvent.length; i++) {
       if (!QuasiABS.Manager._cachedEmptyEvent[i]) {
@@ -763,7 +805,7 @@ var QuasiABS = {};
   QuasiABS.Manager.clear = function() {
     this._pictures = [];
     this._animations = [];
-    this._mapId = $gameMap.mapId;
+    this._mapId = $gameMap._mapId;
   };
 
   //-----------------------------------------------------------------------------
@@ -1352,6 +1394,13 @@ var QuasiABS = {};
 
   Skill_Sequencer.prototype.userForceSkill = function(action) {
     var id = Number(action[2]);
+    var angleOffset = Number(action[3]);
+    if (angleOffset) {
+      var radOffset = angleOffset * Math.PI / 180;
+      this._character._radian = this._character.directionToRadian(this._character._direction);
+      this._character._radian += radOffset;
+      this._character._radian += this._character._radian < 0 ? 2 * Math.PI : 0;
+    }
     this._character.forceSkill(id, true);
   };
 
@@ -1476,7 +1525,7 @@ var QuasiABS = {};
       if (!this._skill.pictureCollider) {
         this._skill.pictureCollider = new Sprite_SkillCollider(this._skill.collider);
         var x = this._skill.collider.center.x;
-        var y = this._skill.collider.center.yl
+        var y = this._skill.collider.center.y;
         this._skill.pictureCollider.move(x, y);
         QuasiABS.Manager.addPicture(this._skill.pictureCollider);
       }
@@ -1644,39 +1693,47 @@ var QuasiABS = {};
   var Alias_Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
   Game_Interpreter.prototype.pluginCommand = function(command, args) {
     if (command.toLowerCase() === "qabs") {
-      if (args[0].toLowerCase() === "event" || args[0].toLowerCase() === "player") {
-        if (args[0].toLowerCase() === "event") {
-          var id = this.eventId();
-          var chara = $gameMap.event(id);
-        } else {
-          var id = 0;
-          var chara = $gamePlayer;
-        }
+      var id;
+      var chara;
+      if (args[0].toLowerCase() === "event") {
+        id = this.eventId();
+        chara = $gameMap.event(id);
+      }
 
-        if (args[1].toLowerCase() === "usebestskill") {
-          var skillId = QuasiABS.AI.bestAction(id);
-          chara.useSkill(skillId);
+      if (args[0].toLowerCase() === "player") {
+        id = 0;
+        chara = $gamePlayer;
+      }
+
+      if (!chara) {
+        id = Number(args[0]);
+        chara = $gameMap.event(id);
+        if (!chara) return;
+      }
+
+      if (args[1].toLowerCase() === "usebestskill") {
+        var skillId = QuasiABS.AI.bestAction(id);
+        chara.useSkill(skillId);
+        return;
+      }
+
+      if (args[1].toLowerCase() === "useskill") {
+        var skillId = Number(args[2]) || 0;
+        chara.useSkill(skillId);
+        return;
+      }
+
+      if (args[1].toLowerCase() === "forceskill") {
+        var skillId = Number(args[2]);
+        if (skillId) {
+          chara.forceSkill(skillId);
           return;
         }
+      }
 
-        if (args[1].toLowerCase() === "useskill") {
-          var skillId = Number(args[2]) || 0;
-          chara.useSkill(skillId);
-          return;
-        }
-
-        if (args[1].toLowerCase() === "forceskill") {
-          var skillId = Number(args[2]);
-          if (skillId) {
-            chara.forceSkill(skillId);
-            return;
-          }
-        }
-
-        if (args[0].toLowerCase() === "event" && args[1].toLowerCase() === "disable") {
-          chara.disableEnemy();
-          return;
-        }
+      if (chara !== $gamePlayer && args[1].toLowerCase() === "disable") {
+        chara.disableEnemy();
+        return;
       }
     }
     Alias_Game_Interpreter_pluginCommand.call(this, command, args);
@@ -2110,6 +2167,10 @@ var QuasiABS = {};
   var Alias_Game_Actor_initEquips = Game_Actor.prototype.initEquips;
   Game_Actor.prototype.initEquips = function(equips) {
     Alias_Game_Actor_initEquips.call(this, equips);
+    this.initWeaponSkills();
+  };
+
+  Game_Actor.prototype.initWeaponSkills = function() {
     if (this === $gameParty.leader()) {
       for (var i = 0; i < this._equips.length; i++) {
         if (this._equips[i].object()) {
@@ -2124,9 +2185,11 @@ var QuasiABS = {};
 
   var Alias_Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;
   Game_Actor.prototype.changeEquip = function(slotId, item) {
-    var oldId = equipId = 0;
+    var oldId, equipId = 0;
+    var wasWeapon;
     if (this._equips[slotId] && this._equips[slotId].object()) {
       oldId = this._equips[slotId].object().baseItemId || this._equips[slotId].object().id;
+      wasWeapon = DataManager.isWeapon(this._equips[slotId].object());
     }
     Alias_Game_Actor_changeEquip.call(this, slotId, item);
     if (this._equips[slotId] && this._equips[slotId].object()) {
@@ -2135,7 +2198,7 @@ var QuasiABS = {};
     if (equipId !== oldId && this._equips[slotId].isWeapon()) {
       this.changeWeaponSkill(equipId);
     }
-    if (equipId === 0) {
+    if (equipId === 0 && wasWeapon) {
       this.changeWeaponSkill(0);
     }
   };
@@ -2572,10 +2635,12 @@ var QuasiABS = {};
   };
 
   Game_Player.prototype.setupBattler = function() {
-    if (!this.actor()) return;
+    if (!this.battler()) return;
     this._battlerId = this.battler()._actorId;
     this.battler()._charaId = 0;
     $gameSystem.loadClassABSKeys();
+    $gameSystem.changeABSWeaponSkills({});
+    this.battler().initWeaponSkills();
   };
 
   Game_Player.prototype.team = function() {
@@ -2804,13 +2869,28 @@ var QuasiABS = {};
   };
 
   //-----------------------------------------------------------------------------
+  // Game_EventCopy
+
+  Game_EventCopy.prototype = Object.create(Game_Event.prototype);
+  Game_EventCopy.prototype.constructor = Game_Event;
+
+  Game_EventCopy.prototype.initialize = function(mapId, eventData) {
+    this._eventData = eventData;
+    Game_Event.prototype.initialize.call(this, mapId, null);
+  };
+
+  Game_EventCopy.prototype.event = function() {
+    return this._eventData;
+  };
+
+  //-----------------------------------------------------------------------------
   // Game_Event
   //
   // The game object class for an event. It contains functionality for event page
   // switching and running parallel process events.
 
   var Alias_Game_Event_initialize = Game_Event.prototype.initialize;
-  Game_Event.prototype.initialize = function(mapId, eventId) {
+  Game_Event.prototype.initialize = function(mapId, eventId, eventData) {
     Alias_Game_Event_initialize.call(this, mapId, eventId);
     this.setupBattler();
   };
