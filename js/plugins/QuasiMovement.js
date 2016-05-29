@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.296
-// Last Update: May 24, 2016
+// Version: 1.297
+// Last Update: May 25, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,12 +22,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.296;
+Imported.Quasi_Movement = 1.297;
 
 //=============================================================================
  /*:
  * @plugindesc Change the way RPG Maker MV handles Movement.
- * Version: 1.296
+ * Version: 1.297
  * <QuasiMovement>
  * @author Quasi       Site: http://quasixi.com
  *
@@ -901,12 +901,38 @@ var QuasiMovement = {};
     return this._destinationPY;
   };
 
-  var Alias_Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
-  Scene_Map.prototype.onMapLoaded = function() {
-    Alias_Scene_Map_onMapLoaded.call(this);
-    // Don't remember why I was reloading boxes here
-    // Will leave commented out incase it was to fix a bug
-    //$gameMap.reloadAllBoxes();
+  //-----------------------------------------------------------------------------
+  // Game_System
+  //
+  // The game object class for the system data.
+
+  Game_System.prototype.variableFloats = function() {
+    return this._variableFloats;
+  };
+
+  Game_System.prototype.enableVariableFloats = function() {
+    this._variableFloats = true;
+  };
+
+  Game_System.prototype.disableVariableFloats = function() {
+    this._variableFloats = false;
+  };
+
+  //-----------------------------------------------------------------------------
+  // Game_Variables
+  //
+  // The game object class for variables.
+
+  var Alias_Game_Variables_setValue = Game_Variables.prototype.setValue;
+  Game_Variables.prototype.setValue = function(variableId, value) {
+    if ($gameSystem.variableFloats()) {
+      if (variableId > 0 && variableId < $dataSystem.variables.length) {
+        this._data[variableId] = value;
+        this.onChange();
+      }
+    } else {
+      Alias_Game_Variables_setValue.call(this, variableId, value);
+    }
   };
 
   //-----------------------------------------------------------------------------
@@ -1488,6 +1514,25 @@ var QuasiMovement = {};
       }
     }
     return charas;
+  };
+
+  Game_Map.prototype.removeFromCharacterGrid = function(chara) {
+    if (!QuasiMovement._characterGrid) return;
+    var box  = chara.collider();
+    var edge = box.gridEdge();
+    var x1   = edge[0];
+    var x2   = edge[1];
+    var y1   = edge[2];
+    var y2   = edge[3];
+    for (; x1 <= x2; x1++) {
+      for (; y1 <= y2; y1++) {
+        var grid = QuasiMovement._characterGrid[x1][y1];
+        var i = grid.indexOf(chara);
+        if (i >= 0) {
+          grid.splice(i, 1);
+        }
+      }
+    }
   };
 
   Game_Map.prototype.updateCharacterGrid = function(chara, prev) {
@@ -3892,6 +3937,13 @@ var QuasiMovement = {};
       return;
     }
     this._colliderSprite.setupCollider(this._colliderData);
+  };
+
+  Sprite_Character.prototype.removeStageReference = function() {
+    PIXI.DisplayObjectContainer.prototype.removeStageReference.call(this);
+    if (this._colliderSprite) {
+      this.parent.removeChild(this._colliderSprite);
+    }
   };
 
   //-----------------------------------------------------------------------------
