@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Input
-// Version: 1.03
-// Last Update: December 26, 2015
+// Version: 1.04
+// Last Update: May 28, 2016
 //============================================================================
 // ** Terms of Use
 // ** This does not follow my normal terms!!
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Input = 1.03;
+Imported.Quasi_Input = 1.04;
 
 //=============================================================================
  /*:
  * @plugindesc Adds additional keys to Input class, and allows remapping keys.
- * Version 1.03
+ * Version 1.04
  * @author Quasi      Site: http://quasixi.com
  *
  * @param Ok
@@ -200,9 +200,8 @@ Imported.Quasi_Input = 1.03;
  */
 //=============================================================================
 
-var QuasiInput = (function() {
-  var QuasiInput = {};
-  QuasiInput.public = {};
+var QuasiInput = {};
+(function() {
   QuasiInput.proccessParameters = function() {
     var parameters   = PluginManager.parameters('QuasiInput');
     var remapped = {};
@@ -223,7 +222,7 @@ var QuasiInput = (function() {
     remapped['fullscreen'] = parameters['FullScreen'];
     remapped['restart']    = parameters['Restart'];
     remapped['console']    = parameters['Console'];
-    this.public.remapped   = remapped;
+    this.remapped   = remapped;
   };
 
   QuasiInput.stringToAry = function(string) {
@@ -234,6 +233,7 @@ var QuasiInput = (function() {
     });
     return ary;
   };
+
   QuasiInput.proccessParameters();
 
   // Key codes from
@@ -260,7 +260,7 @@ var QuasiInput = (function() {
   };
 
   // returns key code based off the key name
-  QuasiInput.public.keyAt = function(keyName) {
+  QuasiInput.keyAt = function(keyName) {
     for (var key in this.keys) {
       if (!this.keys.hasOwnProperty(key)) continue;
       if (this.keys[key] === keyName) return key;
@@ -276,7 +276,7 @@ var QuasiInput = (function() {
   // ConfigManager.keys is real remap key while QuasiInput.remapped is the default
   // values, which is needed if you are using an in game key remapper so it knows
   // what value to set it when setting all the keys back to default.
-  QuasiInput.public.remap = function(key) {
+  QuasiInput.remap = function(key) {
     switch(key) {
       case "tab":
         return ConfigManager.keys["tab"];
@@ -341,7 +341,7 @@ var QuasiInput = (function() {
   // Each key is the ENG representation of the key
   // The values are an array, each index is a different language
   // Right now 1st index is Russian and 2nd is Japanese (Kana Input)
-  QuasiInput.public.translation = {
+  QuasiInput.translation = {
     "A": ["Ф", "ち"],  "a": ["ф", "ち"],
     "B": ["И", "こ"],  "b": ["и", "こ"],
     "C": ["С", "そ"],  "c": ["с", "そ"],
@@ -397,7 +397,7 @@ var QuasiInput = (function() {
   // * Note this is not actually "translating" this is more like remapping
   //   but since I already have a remapping function I named this translate
   //   to avoid possible confusion
-  QuasiInput.public.translate = function(letter) {
+  QuasiInput.translate = function(letter) {
     if ($gameSystem.isRussian()) {
       return this.translation[letter] ? (this.translation[key][0] || letter) : letter;
     }
@@ -492,7 +492,7 @@ var QuasiInput = (function() {
     if (/^\$/.test(this._latestButton)) {
       return alias.call(this, "$" + keyName);
     }
-    var newKey = QuasiInput.public.remap(keyName);
+    var newKey = QuasiInput.remap(keyName);
     if (!newKey) return alias.call(this, keyName);
     keyName = newKey;
     if (keyName.constructor === Array) {
@@ -603,15 +603,15 @@ var QuasiInput = (function() {
   Graphics._onKeyDown = function(event) {
     if (!event.ctrlKey && !event.altKey) {
       switch (event.keyCode) {
-      case QuasiInput.public.remap("fps"):
+      case QuasiInput.remap("fps"):
         event.preventDefault();
         this._switchFPSMeter();
         break;
-      case QuasiInput.public.remap("stretch"):
+      case QuasiInput.remap("stretch"):
         event.preventDefault();
         this._switchStretchMode();
         break;
-      case QuasiInput.public.remap("fullscreen"):
+      case QuasiInput.remap("fullscreen"):
         event.preventDefault();
         this._switchFullScreen();
         break;
@@ -627,12 +627,12 @@ var QuasiInput = (function() {
   SceneManager.onKeyDown = function(event) {
     if (!event.ctrlKey && !event.altKey) {
       switch (event.keyCode) {
-      case QuasiInput.public.remap("restart"):
+      case QuasiInput.remap("restart"):
         if (Utils.isNwjs()) {
           location.reload();
         }
         break;
-      case QuasiInput.public.remap("console"):
+      case QuasiInput.remap("console"):
         if (Utils.isNwjs() && Utils.isOptionValid('test')) {
           require('nw.gui').Window.get().showDevTools();
         }
@@ -646,7 +646,7 @@ var QuasiInput = (function() {
   //
   // The static class that manages the configuration data.
 
-  ConfigManager.keys = JSON.parse(JSON.stringify(QuasiInput.public.remapped));
+  ConfigManager.keys = JSON.parse(JSON.stringify(QuasiInput.remapped));
 
   var Alias_ConfigManager_makeData = ConfigManager.makeData;
   ConfigManager.makeData = function() {
@@ -660,8 +660,6 @@ var QuasiInput = (function() {
     Alias_ConfigManager_applyData.call(this, config);
     this.keys = config.keys || this.keys;
   };
-
-  return QuasiInput.public;
 })();
 
 //-----------------------------------------------------------------------------
@@ -705,11 +703,24 @@ Window_TextInput.prototype.center = function() {
 
 Window_TextInput.prototype.update = function() {
   Window_Base.prototype.update.call(this);
-  if (this.active && this.visible) {
-    if (Input.isRepeated("#backspace")) {
-      if (this.back()) SoundManager.playCancel();
-    }
+  this.processHandling();
+};
 
+Window_TextInput.prototype.processHandling = function() {
+  if (this.isOpenAndActive()) {
+    for (var handler in this._handlers) {
+      if (!this._handlers.hasOwnProperty(handler)) continue;
+      if (Input.isTriggered(handler)) {
+        this.callHandler(handler);
+        return;
+      }
+    }
+    if (Input.isRepeated("#backspace")) {
+      if (this.back()) {
+        SoundManager.playCancel();
+        return;
+      }
+    }
     if (Input.isTriggered("#esc")) {
       return this.callHandler("#esc");
     }
@@ -717,6 +728,10 @@ Window_TextInput.prototype.update = function() {
       this.add(Input._lastPressed);
     }
   }
+};
+
+Window_TextInput.prototype.isOpenAndActive = function() {
+  return this.isOpen() && this.active;
 };
 
 Window_TextInput.prototype.setHandler = function(symbol, method) {
