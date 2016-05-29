@@ -1,3 +1,5 @@
 Plugins:
 Quasi
-Yanfly
+
+Sprites:
+Fafs
