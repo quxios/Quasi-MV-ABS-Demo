@@ -1,7 +1,7 @@
 //=============================================================================
 // Quasi Popup
-// Version: 1.02
-// Last Update: March 30, 2016
+// Version: 1.03
+// Last Update: June 3, 2016
 //=============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -21,12 +21,12 @@
 //=============================================================================
 
 var Imported = Imported || {};
-Imported.QuasiPopup = 1.02;
+Imported.QuasiPopup = 1.03;
 
 //=============================================================================
  /*:
  * @plugindesc Allows to create Popups on Map
- * Version: 1.02
+ * Version: 1.03
  * <QuasiPopup>
  * @author Quasi       Site: http://quasixi.com
  *
@@ -302,6 +302,7 @@ var QuasiPopup = {};
     };
     if (settings) {
       settings.transitions = transitions;
+      settings.charaId = this.eventId();
       this._quasiPopupSettings = settings;
       this._quasiPopupStyle = style;
       this._quasiPopups = popups.filter(function(e) { return !!e; });
@@ -324,7 +325,6 @@ var QuasiPopup = {};
       var x = this.x * $gameMap.tileWidth();
       x +=  $gameMap.tileWidth() / 2;
       var y = this.y * $gameMap.tileHeight();
-
       QuasiPopup.start(x, y, this._quasiPopups[i], style, settings);
       this._quasiPopupTicker = -1;
     }
@@ -385,6 +385,8 @@ var QuasiPopup = {};
     this.bitmap = new Bitmap(0, 0);
     this.window = null;
     this.z = 9;
+    this._ox = 0;
+    this._oy = 0;
     this.anchor.x = 0.5;
     this.anchor.y = 1;
     this.settings = null;
@@ -396,10 +398,31 @@ var QuasiPopup = {};
       alignX: "center",
       alignY: "top",
       transitions: [],
-      window: false
+      window: false,
+      bind: true
     }
     this._defaultStyle = JSON.parse(JSON.stringify(QuasiPopup._defaultStyle));
   };
+
+  Object.defineProperty(Sprite_QuasiPopup.prototype, 'realX', {
+    get: function() {
+      return this._realX + this._ox;
+    },
+    set: function(value) {
+      this._realX = value;
+    },
+    configurable: true
+  });
+
+  Object.defineProperty(Sprite_QuasiPopup.prototype, 'realY', {
+    get: function() {
+      return this._realY + this._oy;
+    },
+    set: function(value) {
+      this._realY = value;
+    },
+    configurable: true
+  });
 
   Sprite_QuasiPopup.prototype.setup = function(string, style, settings) {
     style = this.setupStyle(style);
@@ -450,7 +473,6 @@ var QuasiPopup = {};
       var bold = false;
       var italic = false;
       var string = lines[i];
-      //var regex = /(.*?)<\/?[b|i]>/;
       var regex = /(.*?)<\/?(b|i|icon:(\d+))>/;
       var match = regex.exec(string);
       var originalFont = style.font;
@@ -558,6 +580,19 @@ var QuasiPopup = {};
   Sprite_QuasiPopup.prototype.update = function() {
     Sprite.prototype.update.call(this);
     if (!this.settings) return;
+    if (this.settings.bind && this.settings.charaId) {
+      var chara;
+      if (this.settings.charaId === 0) {
+        chara = $gamePlayer;
+      } else {
+        chara = $gameMap.event(this.settings.charaId);
+      }
+      var x = chara.x * $gameMap.tileWidth();
+      x +=  $gameMap.tileWidth() / 2;
+      var y = chara.y * $gameMap.tileHeight();
+      this.realX = x;
+      this.realY = y;
+    }
     this.updateTransition();
     if (this.notification) {
       this.y = this.realY;
@@ -603,14 +638,14 @@ var QuasiPopup = {};
     var duration = Number(action[1]);
     var distance = Number(action[2]);
     var speed = distance / duration;
-    this.realY -= speed;
+    this._oy -= speed;
   };
 
   Sprite_QuasiPopup.prototype.slidedown = function(action) {
     var duration = Number(action[1]);
     var distance = Number(action[2]);
     var speed = distance / duration;
-    this.realY += speed;
+    this._oy += speed;
   };
 
   Sprite_QuasiPopup.prototype.fadeout = function(action) {
