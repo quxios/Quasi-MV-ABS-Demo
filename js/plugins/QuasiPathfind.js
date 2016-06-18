@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Pathfind
-// Version: 1.11
-// Last Update: February 24, 2016
+// Version: 1.12
+// Last Update: June 18, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -18,12 +18,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_PathFind = 1.11;
+Imported.Quasi_PathFind = 1.12;
 
 //=============================================================================
  /*:
  * @plugindesc Quasi Movement Addon: A star Pathfinding plugin. ( Non-Optimized)
- * Version 1.11
+ * Version 1.12
  * @author Quasi      Site: http://quasixi.com
  *
  * @param Search Limit
@@ -75,13 +75,12 @@ if (!Imported.Quasi_Movement) {
   throw new Error("Error: Quasi Pathfind requires Quasi Movement to work.")
 }
 
-
 //-----------------------------------------------------------------------------
 // Quasi Pathfind
 
-var QuasiPathfind = (function() {
-  var Pathfind = {}
-  Pathfind.proccessParameters = function() {
+var QuasiPathfind = {};
+(function() {
+  QuasiPathfind.proccessParameters = function() {
     var parameters   = PluginManager.parameters('QuasiPathfind');
     this.searchLimit = Number(parameters['Search Limit'] || 2);
     this.moveOnClick = parameters['Pathfind on Click'].toLowerCase() === "true";
@@ -90,9 +89,9 @@ var QuasiPathfind = (function() {
     this.halfOpt     = parameters['Half Optimize'].toLowerCase() === "true";
     this.chaseWait   = Number(parameters['Chase Wait']);
   };
-  Pathfind.proccessParameters();
+  QuasiPathfind.proccessParameters();
 
-  Pathfind.node = function(parent, point) {
+  QuasiPathfind.node = function(parent, point) {
     if (point.constructor === Array) {
       point = new Point(point[0], point[1]);
     }
@@ -109,102 +108,12 @@ var QuasiPathfind = (function() {
     return node;
   };
 
-  Pathfind.nodeDistance = function(initial, final) {
-    //return this.realDistanceSqd(initial, final);
+  QuasiPathfind.nodeDistance = function(initial, final) {
     return this.manhattanDistance(initial, final);
   };
 
-  Pathfind.manhattanDistance = function(initial, final) {
+  QuasiPathfind.manhattanDistance = function(initial, final) {
     return Math.abs(initial.x - final.x) + Math.abs(initial.y - final.y);
-  };
-
-  Pathfind.realDistanceSqd = function(initial, final) {
-    var dx = initial.x - final.x;
-    var dy = initial.y - final.y;
-    return dx * dx + dy * dy;
-  };
-
-  Pathfind.Heap = function() {
-    this._array = [];
-  };
-
-  Pathfind.Heap.prototype.scoreFunction = function(node) {
-    return node.f;
-  };
-
-  Pathfind.Heap.prototype.push = function(element) {
-    this._array.push(element);
-    this.bubbleUp(this._array.length - 1);
-  };
-
-  Pathfind.Heap.prototype.pop = function() {
-    var first = this._array[0];
-    var last  = this._array.pop();
-    if (this._array.length > 0) {
-      this._array[0] = last;
-      this.sinkDown(0);
-    }
-    return first;
-  };
-
-  Pathfind.Heap.prototype.remove = function(node) {
-   for (var i = 0; i < this._array.length; i++) {
-     if (this._array[i] != node) continue;
-     var end = this._array.pop();
-     if (i == this._array.length - 1) break;
-     this._array[i] = end;
-     this.bubbleUp(i);
-     this.sinkDown(i);
-     break;
-   }
- };
-
- Pathfind.Heap.prototype.length = function() {
-   return this._array.length;
- };
-
- Pathfind.Heap.prototype.bubbleUp = function(n) {
-    var element = this._array[n]
-    var score   = this.scoreFunction(element);
-    while (n > 0) {
-      var parentN = Math.floor((n + 1) / 2) - 1;
-      var parent = this._array[parentN];
-      if (score >= this.scoreFunction(parent)) {
-        break;
-      }
-      this._array[parentN] = element;
-      this._array[n] = parent;
-      n = parentN;
-    }
-  };
-
-  Pathfind.Heap.prototype.sinkDown = function(n) {
-    var length = this._array.length;
-    var element = this._array[n];
-    var elemScore = this.scoreFunction(element);
-    while(true) {
-      var child2N = (n + 1) * 2;
-      var child1N = child2N - 1;
-      var swap = null;
-      if (child1N < length) {
-        var child1 = this._array[child1N],
-        child1Score = this.scoreFunction(child1);
-        if (child1Score < elemScore) {
-          swap = child1N;
-        }
-      }
-      if (child2N < length) {
-        var child2 = this._array[child2N],
-        child2Score = this.scoreFunction(child2);
-        if (child2Score < (swap == null ? elemScore : child1Score)) {
-          swap = child2N;
-        }
-      }
-      if (!swap) break;
-      this._array[n] = this._array[swap];
-      this._array[swap] = element;
-      n = swap;
-    }
   };
 
   //-----------------------------------------------------------------------------
@@ -276,7 +185,7 @@ var QuasiPathfind = (function() {
   };
 
   Game_Character.prototype.startPathFind = function(goalX, goalY) {
-    if (!Pathfind.moveOnClick) return;
+    if (!QuasiPathfind.moveOnClick) return;
     var half = QuasiMovement.tileSize / 2;
     goalX -= half;
     goalY -= half;
@@ -323,20 +232,20 @@ var QuasiPathfind = (function() {
       return this._pathFind = null;
     }
     if (!this.canPixelPass(goalX, goalY, 5)) {
-      if (Pathfind.showLog) console.log("Trying Neighboring points");
+      if (QuasiPathfind.showLog) console.log("Trying Neighboring points");
       var neighbor = skipNeighbor ? false : this.anyNeighborPass(goalX, goalY);
       this.collider().moveto(this._px, this._py);
       if (neighbor) {
-        if (Pathfind.showLog) console.log("Neighboring points found");
+        if (QuasiPathfind.showLog) console.log("Neighboring points found");
         return this.pathFind(neighbor[0], neighbor[1], forced, [goalX, goalY]);
       } else {
-        if (Pathfind.showLog) console.log("Not passable");
+        if (QuasiPathfind.showLog) console.log("Not passable");
         $gameTemp.clearDestination();
         return this._pathFind = null;
       }
     }
     if (!this.canPixelPass(this._px, this._py, 5)) {
-      if (Pathfind.showLog) console.log("Can't move");
+      if (QuasiPathfind.showLog) console.log("Can't move");
       $gameTemp.clearDestination();
       return this._pathFind = null;
     }
@@ -409,49 +318,49 @@ var QuasiPathfind = (function() {
     }
   };
 
-
   Game_Character.prototype.aStar = function(start, end) {
-    var startNode = Pathfind.node(null, start);
-    var endNode = Pathfind.node(null, end);
-    var openNodes = new Pathfind.Heap;
-    openNodes.push(startNode);
+    var startNode = QuasiPathfind.node(null, start);
+    var endNode = QuasiPathfind.node(null, end);
+    var openNodes = [startNode];
     var closedValues = {};
     closedValues[startNode.value] = true;
     var current = startNode;
-    var neighbors, newNode, finalPath;
-    var max = Pathfind.searchLimit;
-    var i, j;
     var finalPath = [];
-    if (Pathfind.showLog) {
+    var max = QuasiPathfind.searchLimit;
+    if (QuasiPathfind.showLog) {
       console.log("Pathfinding Started");
       console.time("Pathfind");
     }
-    while(openNodes.length() > 0) {
+    while(openNodes.length > 0) {
       max--;
       if (max === 0) {
-        if (Pathfind.showLog) console.log("Pathfinding reached search Limit.");
+        if (QuasiPathfind.showLog) console.log("Pathfinding reached search Limit.");
         finalPath = this.createPathFrom(current);
         break;
       }
-      current = openNodes.pop();
+      current = openNodes[0];
+      for (i = 0; i < openNodes.length; i++) {
+        if (openNodes[i].f < current.f) current = openNodes[i];
+      }
       if (current.value === endNode.value) {
-        if (Pathfind.showLog) console.log("Pathfinding found end point.");
+        if (QuasiPathfind.showLog) console.log("Pathfinding found end point.");
         finalPath = this.createPathFrom(current);
         break;
       }
-      neighbors = this.findNeighbors(current, endNode);
-      for (i = 0, j = neighbors.length; i < j; i++) {
-        newNode = neighbors[i];
+      openNodes.splice(openNodes.indexOf(current), 1);
+      var neighbors = this.findNeighbors(current, endNode);
+      for (var i = 0, j = neighbors.length; i < j; i++) {
+        var newNode = neighbors[i];
         if (!closedValues[newNode.value]) {
-          newNode.g = current.g + Pathfind.nodeDistance(newNode, current);
-          newNode.f = newNode.g + Pathfind.nodeDistance(newNode, endNode);
-          openNodes.push(newNode);
+          newNode.g = current.g + QuasiPathfind.nodeDistance(newNode, current);
+          newNode.f = newNode.g + QuasiPathfind.nodeDistance(newNode, endNode);
           closedValues[newNode.value] = true;
+          openNodes.push(newNode);
         }
       }
     }
-    if (Pathfind.showLog) {
-      console.log("# of Runs:", Pathfind.searchLimit - max);
+    if (QuasiPathfind.showLog) {
+      console.log("# of Runs:", QuasiPathfind.searchLimit - max);
       console.timeEnd("Pathfind");
     }
     finalPath.unshift([startNode.x, startNode.y]);
@@ -466,7 +375,6 @@ var QuasiPathfind = (function() {
     var nearEnd = Math.abs(x - endNode.x) < QuasiMovement.tileSize &&
                   Math.abs(y - endNode.y) < QuasiMovement.tileSize;
     var tiles = nearEnd ? this.moveTiles() : this.optTiles();
-    //var mapWidth = $gameMap.width() * QuasiMovement.tileSize;
     for (var i = 1; i < 5; i++) {
       var dir = i * 2;
       if (this.canPixelPass(x, y, dir, tiles)) {
@@ -474,20 +382,19 @@ var QuasiPathfind = (function() {
         y2 = $gameMap.roundPYWithDirection(y, dir, tiles);
         if (Math.abs(x2 - endNode.x) < tiles &&
             Math.abs(y2 - endNode.y) < tiles) {
-          neighbors.push(Pathfind.node(current, new Point(endNode.x, endNode.y)));
+          neighbors.push(QuasiPathfind.node(current, new Point(endNode.x, endNode.y)));
         } else {
-          //var value = x2 + (y2 * mapWidth);
-          var node = Pathfind.node(current, new Point(x2, y2));
+          var node = QuasiPathfind.node(current, new Point(x2, y2));
           neighbors.push(node);
         }
         continue;
       }
-      //if (Pathfind.successor) {
+      //if (QuasiPathfind.successor) {
       //  successor = this.findSuccessors(x, y, x2, y2, dir, tiles);
       //  if (successor) neighbors.push(successor);
       //}
     }
-    if (Pathfind.diagonal) {
+    if (QuasiPathfind.diagonal) {
       //neighbors.concat(this.findDiagNeighbors(x, y, endNode));
     }
     return neighbors;
@@ -523,7 +430,7 @@ var QuasiPathfind = (function() {
   // Doesn't completely work since it adds unpassable tiles
   // to the list sometimes.
   Game_Character.prototype.findSuccessors = function(x1, y1, x2, y2, dir, tiles) {
-    if (tiles === this.moveTiles() || !Pathfind.optTiles) return;
+    if (tiles === this.moveTiles() || !QuasiPathfind.optTiles) return;
     var dir = this.reverseDir(dir);
     var amt = tiles / this.moveTiles();
     var success, i, dist;
@@ -539,14 +446,14 @@ var QuasiPathfind = (function() {
   };
 
   Game_Character.prototype.optTiles = function() {
-    if (!Pathfind.optTiles || !QuasiMovement.offGrid) {
+    if (!QuasiPathfind.optTiles || !QuasiMovement.offGrid) {
       return this.moveTiles();
     }
     if (!this._optTiles) {
       var w = Math.round(this.collider().width);
-      if (Pathfind.halfOpt) w /= 2;
+      if (QuasiPathfind.halfOpt) w /= 2;
       var h = Math.round(this.collider().height);
-      if (Pathfind.halfOpt) h /= 2;
+      if (QuasiPathfind.halfOpt) h /= 2;
       while (w % this.moveTiles() !== 0) {
         w--;
         if (w <= this.moveTiles()) break;
@@ -607,7 +514,7 @@ var QuasiPathfind = (function() {
   };
 
   Game_Character.prototype.updateChase = function() {
-    var wait = Pathfind.chaseWait;
+    var wait = QuasiPathfind.chaseWait;
     var limit = 10 * QuasiMovement.tileSize;
     if (this.pixelDistanceFrom(this._isChasing.chara.cx(), this._isChasing.chara.cy()) > limit) {
       wait *= 5;
@@ -647,6 +554,4 @@ var QuasiPathfind = (function() {
     }
     Alias_Game_Event_updateStop.call(this);
   };
-
-  return Pathfind;
 })();
