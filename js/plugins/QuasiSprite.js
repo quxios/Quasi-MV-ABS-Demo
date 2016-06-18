@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.082
-// Last Update: May 23, 2016
+// Version: 1.083
+// Last Update: June 17, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,12 +17,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.082;
+Imported.Quasi_Sprite = 1.083;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.082
+ * Version 1.083
  * <QuasiSprite>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -150,9 +150,6 @@ var QuasiSprite = { ready: false };
       var dir = this._direction;
       if (Imported.Quasi_Movement && this.isDiagonal()) {
         var diag = this.isDiagonal();
-        if (this.hasPose("idle" + diag)) {
-          dir = diag;
-        }
       }
       if (!isMoving && this.hasPose("idle" + dir)) {
         if (this._pose !== "idle" + dir) {
@@ -160,22 +157,26 @@ var QuasiSprite = { ready: false };
           this._animationCount = 0;
           this._isIdle = true;
         }
+        if (diag && this.hasPose("idle" + diag)) {
+          dir = diag;
+        }
         this._pose = "idle" + dir;
       } else {
         if (!isMoving) {
           this._pattern = 0;
         }
-        if (Imported.Quasi_Movement && this.isDiagonal()) {
-          dir = this.isDiagonal();
-        }
         this._isIdle = false;
         if (this.isDashing()) {
-          if (!this.hasPose("dash" + dir)) return;
-          this._pose = "dash" + dir;
-        } else {
-          if (!this.hasPose("move" + dir)) return;
-          this._pose = "move" + dir;
+          if (diag && this.hasPose("dash" + diag)) {
+            dir = diag;
+          }
+          if (this.hasPose("dash" + dir)) {
+            this._pose = "dash" + dir;
+            return;
+          }
         }
+        if (!this.hasPose("move" + dir)) return;
+        this._pose = "move" + dir;
       }
       return;
     }
@@ -420,7 +421,7 @@ var QuasiSprite = { ready: false };
     if (oldBattlerName !== this._battlerName) {
       this._isQChara = undefined;
       if (this.isQCharacter()) {
-        this.qSprite() = QuasiSprite.json[this.isQCharacter()];
+        this._qSprite = QuasiSprite.json[this.isQCharacter()];
       }
     }
   };
@@ -431,7 +432,7 @@ var QuasiSprite = { ready: false };
       Sprite_Battler.prototype.updateFrame.call(this);
       var bitmap = this._mainSprite.bitmap;
       if (bitmap) {
-        var motion = this.qSprite().poses[this._pose];
+        var motion = this._qSprite.poses[this._pose];
         if (!motion) {
           this._mainSprite.visible = false;
           return;
@@ -441,8 +442,8 @@ var QuasiSprite = { ready: false };
         var i = pattern[this._pattern];
         var cw = bitmap.width / this.qSprite().cols;
         var ch = bitmap.height / this.qSprite().rows;
-        var cx = i % this.qSprite().cols;
-        var cy = (i - cx) / this.qSprite().cols;
+        var cx = i % this._qSprite.cols;
+        var cy = (i - cx) / this._qSprite.cols;
         this._mainSprite.setFrame(cx * cw, cy * ch, cw, ch);
       }
     } else {
@@ -453,7 +454,7 @@ var QuasiSprite = { ready: false };
   var Alias_Sprite_Actor_updateMotionCount = Sprite_Actor.prototype.updateMotionCount;
   Sprite_Actor.prototype.updateMotionCount = function() {
     if (this.isQCharacter()) {
-      var motion = this.qSprite().poses[this._pose];
+      var motion = this._qSprite.poses[this._pose];
       if (!motion) return;
       var poseWait = motion.speed;
       if (++this._motionCount >= poseWait) {
@@ -507,7 +508,7 @@ if (Imported.YEP_X_ActSeqPack2) {
   Sprite_Actor.prototype.forceMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
-      var motion = this.qSprite().poses[pose];
+      var motion = this._qSprite.poses[pose];
       if (motion) {
         this._pose = pose;
         this._pattern = 0;
