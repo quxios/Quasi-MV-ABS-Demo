@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.297
-// Last Update: May 25, 2016
+// Version: 1.298
+// Last Update: June 18, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,12 +22,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.297;
+Imported.Quasi_Movement = 1.298;
 
 //=============================================================================
  /*:
  * @plugindesc Change the way RPG Maker MV handles Movement.
- * Version: 1.297
+ * Version: 1.298
  * <QuasiMovement>
  * @author Quasi       Site: http://quasixi.com
  *
@@ -987,6 +987,17 @@ var QuasiMovement = {};
         var retain = Number(args[4]) || 0;
         var fade = Number(args[5]) || 0;
         $gamePlayer.reserveTransfer(mapId, x, y, retain, fade);
+        return;
+      }
+      if (args[0].toLowerCase() === "seteventpos") {
+        var eventId = Number(args[1]);
+        var x = Number(args[2]) / QuasiMovement.tileSize;
+        var y = Number(args[3]) / QuasiMovement.tileSize;
+        var retain = Number(args[4]) || 0;
+        $gameMap.event(eventId).locate(x, y);
+        if (retain > 0) {
+          $gameMap.event(eventId).setDirection(retain);
+        }
         return;
       }
     }
@@ -1971,7 +1982,7 @@ var QuasiMovement = {};
       return true;
     }
     if (self.constructor === Game_Player) {
-      if (self.isInVehicle() && chara.constructor === Game_Vehicle) {
+      if (self.isInVehicle() || chara.constructor === Game_Vehicle) {
         return chara._type === self._vehicleType;
       }
     }
@@ -2824,6 +2835,16 @@ var QuasiMovement = {};
 
   Game_Character.prototype.pixelDistanceFromWithBox = function(other) {
     // to do or not, not really needed
+  };
+
+  Game_Character.prototype.radianTowards = function(chara) {
+    var x1 = chara.cx();
+    var y1 = chara.cy();
+    var x2 = this.cx();
+    var y2 = this.cy();
+    var radian = Math.atan2(-(y1 - y2), x1 - x2);
+    radian += radian < 0 ? 2 * Math.PI : 0;
+    return radian;
   };
 
   Game_Character.prototype.moveRandom = function() {
