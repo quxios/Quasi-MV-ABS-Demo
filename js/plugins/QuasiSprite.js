@@ -1,6 +1,6 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.083
+// Version: 1.084
 // Last Update: June 17, 2016
 //============================================================================
 // ** Terms of Use
@@ -17,12 +17,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.083;
+Imported.Quasi_Sprite = 1.084;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.083
+ * Version 1.084
  * <QuasiSprite>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -174,6 +174,9 @@ var QuasiSprite = { ready: false };
             this._pose = "dash" + dir;
             return;
           }
+        }
+        if (diag && this.hasPose("move" + diag)) {
+          dir = diag;
         }
         if (!this.hasPose("move" + dir)) return;
         this._pose = "move" + dir;
@@ -402,7 +405,7 @@ var QuasiSprite = { ready: false };
   Sprite_Actor.prototype.startMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
-      var motion = this.qSprite().poses[pose];
+      var motion = this._qSprite.poses[pose];
       if (motion) {
         this._pose = pose;
         this._pattern = 0;
@@ -440,8 +443,8 @@ var QuasiSprite = { ready: false };
         this._mainSprite.visible = true;
         var pattern = motion.pattern;
         var i = pattern[this._pattern];
-        var cw = bitmap.width / this.qSprite().cols;
-        var ch = bitmap.height / this.qSprite().rows;
+        var cw = bitmap.width / this._qSprite.cols;
+        var ch = bitmap.height / this._qSprite.rows;
         var cx = i % this._qSprite.cols;
         var cy = (i - cx) / this._qSprite.cols;
         this._mainSprite.setFrame(cx * cw, cy * ch, cw, ch);
