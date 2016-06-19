@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.084
-// Last Update: June 17, 2016
+// Version: 1.085
+// Last Update: June 18, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,12 +17,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.084;
+Imported.Quasi_Sprite = 1.085;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.084
+ * Version 1.085
  * <QuasiSprite>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -405,6 +405,7 @@ var QuasiSprite = { ready: false };
   Sprite_Actor.prototype.startMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
+      console.log(pose);
       var motion = this._qSprite.poses[pose];
       if (motion) {
         this._pose = pose;
@@ -505,12 +506,12 @@ var QuasiSprite = { ready: false };
       Alias_Sprite_Actor_refreshMotion.call(this);
     }
   };
-
-if (Imported.YEP_X_ActSeqPack2) {
+if (Imported.YEP_BattleEngineCore) {
   var Alias_Sprite_Actor_forceMotion = Sprite_Actor.prototype.forceMotion;
   Sprite_Actor.prototype.forceMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
+      console.log(pose);
       var motion = this._qSprite.poses[pose];
       if (motion) {
         this._pose = pose;
@@ -521,7 +522,9 @@ if (Imported.YEP_X_ActSeqPack2) {
       Alias_Sprite_Actor_forcetMotion.call(this, motionType);
     }
   };
+}
 
+if (Imported.YEP_X_ActSeqPack2) {
   var Alias_BattleManager_processActionSequence = BattleManager.processActionSequence;
   BattleManager.processActionSequence = function(actionName, actionArgs) {
     if (actionName.match(/qmotion[ ](.*)/i)) {
