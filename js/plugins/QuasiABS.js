@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.98
-// Last Update: May 27, 2016
+// Version: 0.99
+// Last Update: June 21, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.98;
+Imported.Quasi_ABS = 0.99;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.98
+ * Version: 0.99
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -853,16 +853,21 @@ var QuasiABS = {};
   QuasiABS.AI.bestAction = function(userId) {
     var self  = userId === 0 ? $gamePlayer : $gameMap.event(userId);
     if (!self.battler()) return false;
-    if (QuasiABS.radianAtks && userId > 0) {
-      $gameMap.event(userId).radianTowardsPlayer();
-    };
+    var targets;
+    var action = {};
     var skills = self.usableSkills().filter(function(skillId) {
-      return QuasiABS.AI.willHit(userId, skillId).length > 0;
+      targets = QuasiABS.AI.willHit(userId, skillId);
+      if (targets.length > 0) {
+        action[skillId] = targets;
+        return true;
+      }
+      return false;
     });
     if (skills.length === 0) return false;
     // Change below for better AI instead of random skill
     // from possible skills
-    return skills[Math.floor(Math.random() * skills.length)];
+    var random = skills[Math.floor(Math.random() * skills.length)]
+    return random;
   };
 
   /**
@@ -908,7 +913,6 @@ var QuasiABS = {};
     var range, targets;
     var getTargetObj = {data: skill};
     var aiRange = QuasiABS.getAiRange(skill);
-    if (targetRange !== 0 || self._radian) {
       var maxRange = targetRange < aiRange * 2 ? aiRange * 2 : targetRange;
       range = new QuasiMovement.Circle_Collider(w + maxRange, h + maxRange);
       range.moveto(x1 - maxRange / 2, y1 - maxRange / 2);
@@ -919,22 +923,24 @@ var QuasiABS = {};
         return range.intersects(chara.collider());
       });
     }
-    // check if moving skills hit
-    if (horz) {
-      w += aiRange;
-      x1 += aiRange * (self._direction === 4 ? -1 : 0);
-    } else {
-      h += aiRange;
-      y1 += aiRange * (self._direction === 8 ? 1 : 0);
+    if (aiRange > 0) {
+      // check if moving skills hit
+      if (horz) {
+        w += aiRange;
+        x1 += aiRange * (self._direction === 4 ? -1 : 0);
+      } else {
+        h += aiRange;
+        y1 += aiRange * (self._direction === 8 ? 1 : 0);
+      }
+      var range = new QuasiMovement.Box_Collider(w, h);
+      range.moveto(x1, y1);
+      SceneManager._scene.addTempCollider(range, 60); // For testing purposes
+      getTargetObj.collider = range;
+      targets = QuasiABS.Manager.getTargets(getTargetObj, self);
+      return targets.filter(function(chara) {
+        return range.intersects(chara.collider());
+      });
     }
-    var range = new QuasiMovement.Box_Collider(w, h);
-    range.moveto(x1, y1);
-    SceneManager._scene.addTempCollider(range, 60); // For testing purposes
-    getTargetObj.collider = range;
-    targets = QuasiABS.Manager.getTargets(getTargetObj, self);
-    return targets.filter(function(chara) {
-      return range.intersects(chara.collider());
-    });
   };
 
   //-----------------------------------------------------------------------------
@@ -1164,6 +1170,9 @@ var QuasiABS = {};
       case "teleport":
         this.userTeleport();
         break;
+      case "setdirection":
+        this.userSetDirection(action);
+        break;
       case "directionfix":
         this.userDirectionFix(action);
         break;
@@ -1378,9 +1387,16 @@ var QuasiABS = {};
     this._character.setPixelPosition(x1, y1);
   };
 
+  Skill_Sequencer.prototype.userSetDirection = function(action) {
+    var dir = Number(action[2]);
+    if (dir) {
+      this._character.setDirection(dir);
+    }
+  };
+
   Skill_Sequencer.prototype.userDirectionFix = function(action) {
     var fix = action[2] === "true";
-    this.setDirectionFix(fix);
+    this._character.setDirectionFix(fix);
   };
 
   Skill_Sequencer.prototype.userPose = function(action) {
@@ -1712,6 +1728,9 @@ var QuasiABS = {};
       }
 
       if (args[1].toLowerCase() === "usebestskill") {
+        var bestTarget = chara.bestTarget();
+        if (!bestTarget) return;
+        chara._radian = chara.radianTowards(bestTarget);
         var skillId = QuasiABS.AI.bestAction(id);
         chara.useSkill(skillId);
         return;
@@ -2292,24 +2311,24 @@ var QuasiABS = {};
     if (this._activeSkills && this._activeSkills.length > 0) {
       this.clearSkills();
     }
+    this.clearAgro();
     this._activeSkills = [];
     this._skillCooldowns = {};
     this._agroList  = {}; // List of charas that attacked this
     this._agrodList = []; // List of charas that this attacked
     this._inCombat = false;
+    this._casting = null;
     this._skillLocked = [];
   };
 
   Game_CharacterBase.prototype.clearSkills = function() {
-    this._skillLocked = [];
-    this._casting = null;
     for (var i = this._activeSkills.length - 1; i >= 0; i--) {
       var skill = this._activeSkills[i];
       QuasiABS.Manager.removePicture(skill.picture);
       QuasiABS.Manager.removePicture(skill.trail);
       QuasiABS.Manager.removePicture(skill.pictureCollider);
       this._activeSkills.splice(i, 1);
-    };
+    }
   };
 
   /**
@@ -2337,7 +2356,7 @@ var QuasiABS = {};
     if (realChara === this) return;
     if (this.isFriendly(realChara)) return;
     this._agroList[chara] = this._agroList[chara] || 0;
-    this._agroList[chara] += skill ? skill.agroPoints : 1;
+    this._agroList[chara] += skill && skill.agroPoints ? skill.agroPoints : 1;
     this._inCombat = true;
     var id = this === $gamePlayer ? 0 : this.eventId();
     if (!realChara._agrodList.contains(id)) realChara._agrodList.push(id);
@@ -2350,6 +2369,9 @@ var QuasiABS = {};
     var i = this._agrodList.indexOf(chara);
     if (i !== -1) this._agrodList.splice(i, 1);
     this._inCombat = this.agroLength() + this._agrodList.length > 0;
+    if (!this._inCombat && this.endCombat) {
+      this.endCombat();
+    }
   };
 
   Game_CharacterBase.prototype.clearAgro = function() {
@@ -2369,6 +2391,25 @@ var QuasiABS = {};
       length += this._agroList[agro];
     }
     return length;
+  };
+
+  Game_CharacterBase.prototype.bestTarget = function() {
+    var mostAgro = 0;
+    var bestChara = null;
+    for (var chara in this._agroList) {
+      if (!this._agroList.hasOwnProperty(chara)) continue;
+      if (this._agroList[chara] > mostAgro) {
+        mostAgro = this._agroList[chara];
+        bestChara = Number(chara);
+      }
+    }
+    if (!bestChara || bestChara === 0) {
+      if (bestChara === null && this.team() !== 2) {
+        return null;
+      }
+      return $gamePlayer
+    }
+    return $gameMap.event(bestChara);
   };
 
   Game_CharacterBase.prototype.inCombat = function() {
@@ -2401,7 +2442,6 @@ var QuasiABS = {};
 
   // Placeholder method, overwrittein in Game_Player and Game_Event
   Game_CharacterBase.prototype.onDeath = function() {
-    return;
   };
 
   Game_CharacterBase.prototype.updateSkills = function() {
@@ -2458,6 +2498,7 @@ var QuasiABS = {};
     if ($gameMap.isEventRunning()) return false;
     if (!$gameSystem._absEnabled) return false;
     if (!this.battler()) return false;
+    if (this.battler().isDead()) return false;
     if (this.battler().isStunned()) return false;
     if (this.isCasting()) return false;
     if (this._skillLocked.length > 0) return false;
@@ -2607,7 +2648,6 @@ var QuasiABS = {};
       x1 += w3;
       y1 += h3;
     }
-
     collider.moveto(x1, y1);
     return collider;
   };
@@ -2672,15 +2712,7 @@ var QuasiABS = {};
   };
 
   Game_Player.prototype.onDeath = function() {
-    if (this._activeSkills.length > 0) {
-      for (var i = this._activeSkills.length - 1; i >= 0; i--) {
-        var skill = this._activeSkills[i];
-        QuasiABS.Manager.removePicture(skill.picture);
-        QuasiABS.Manager.removePicture(skill.trail);
-        this._activeSkills.splice(i, 1);
-      }
-    }
-    this._isDead = true;
+    this.clearABS();
     return SceneManager.goto(Scene_Gameover);
   };
 
@@ -2696,7 +2728,6 @@ var QuasiABS = {};
   };
 
   Game_Player.prototype.updateABS = function() {
-    if (this._isDead) return;
     if (this.battler() && this.canInput()) this.updateInput();
     Game_CharacterBase.prototype.updateABS.call(this);
     if (this._battlerId !== this.actor()._actorId) {
@@ -2973,18 +3004,24 @@ var QuasiABS = {};
 
   Game_Event.prototype.updateAI = function() {
     if (!this.hasAI() || !this.isNearTheScreen()) return;
-    if (this.targetInRange()) {
+    var bestTarget = this.bestTarget();
+    if (!bestTarget) return;
+    var targetId = bestTarget === $gamePlayer ? 0 : bestTarget.eventId();
+    if (this.targetInRange(bestTarget)) {
       // First time going in range
-      if (!this._agroList.hasOwnProperty(0)) {
+      if (!this._agroList.hasOwnProperty(targetId)) {
         this._aiWait1 = QuasiABS.aiWait1;
-        this.addAgro(0);
+        this.addAgro(targetId);
       }
     } else {
-      if (this._inCombat) this.endCombat();
+      if (this._inCombat) {
+        this.endCombat();
+      }
       return;
     }
     var bestAction;
     if (this._aiWait1 >= QuasiABS.aiWait1) {
+      this._radian = this.radianTowards(bestTarget);
       bestAction = QuasiABS.AI.bestAction(this._eventId);
       this._aiWait1 = 0;
     } else {
@@ -2995,12 +3032,12 @@ var QuasiABS = {};
     } else if (this.canMove()) {
       if (Imported.Quasi_PathFind && QuasiABS.aiAStar) {
         if (!this._isChasing && this._freqCount < this.freqThreshold()) {
-          this.pathFindChase(0, true);
+          this.pathFindChase(targetId, true);
         }
       } else {
         if (this._freqCount < this.freqThreshold()) {
-          this.moveTowardPlayer();
-        };
+          this.moveTowardCharacter(bestTarget);
+        }
       }
     }
   };
@@ -3012,7 +3049,9 @@ var QuasiABS = {};
     this._inCombat = false;
     this._moveRouteForcing = false;
     this.restoreMoveRoute();
-    this.clearAgro();
+    if (this.agroLength() > 0) {
+      this.clearAgro();
+    }
     if (Imported.Quasi_PathFind && QuasiABS.aiAStar) {
       this.pathFindGrid(this.event().x, this.event().y);
     } else {
@@ -3021,7 +3060,8 @@ var QuasiABS = {};
     this.refresh();
   };
 
-  Game_Event.prototype.targetInRange = function() {
+  Game_Event.prototype.targetInRange = function(target) {
+    if (!target) return false;
     if (QuasiABS.aiSight && Imported["Quasi_Sight"]) {
       var prev = this._sightSettings.length;
       if (this._inCombat) {
@@ -3031,13 +3071,21 @@ var QuasiABS = {};
       }
       if (prev !== this._sightSettings.length) {
         this._sight = null;
-        this.needsSightUpdate();
-        return this.checkSight();
+      }
+      if (this._sightSettings.target !== target) {
+        if (Imported.Quasi_PathFind) {
+          this.stopChase();
+        }
+        this._sightSettings.target = target;
+        this._sight = null;
+      }
+      if (this.needsSightUpdate()) {
+        $gameSelfSwitches.setValue(this._sightSettings.switch, this.checkSight());
       }
       return $gameSelfSwitches.value(this._sightSettings.switch);
     }
-    var dx = Math.abs($gamePlayer.cx() - this.cx());
-    var dy = Math.abs($gamePlayer.cy() - this.cy());
+    var dx = Math.abs(target.cx() - this.cx());
+    var dy = Math.abs(target.cy() - this.cy());
     var range = this._aiRange + (this._inCombat ? 96 : 0);
     if (dx <= range && dy <= range) {
       return true;
@@ -3082,14 +3130,16 @@ var QuasiABS = {};
 
   Game_Event.prototype.onDeath = function() {
     if (this._onDeath) {
-      eval(this._onDeath);
+      Function("return" + this._onDeath)();
     }
-    var exp = this.battler().exp();
-    $gamePlayer.battler().gainExp(exp);
-    if (exp > 0) {
-      QuasiABS.Manager.startPopup("exp", $gamePlayer.cx(), $gamePlayer.cy(), "Exp: " + exp);
+    if (this._agroList[0] > 0) {
+      var exp = this.battler().exp();
+      $gamePlayer.battler().gainExp(exp);
+      if (exp > 0) {
+        QuasiABS.Manager.startPopup("exp", $gamePlayer.cx(), $gamePlayer.cy(), "Exp: " + exp);
+      }
+      this.setupLoot();
     }
-    this.setupLoot();
     this.clearABS();
     this._respawn = Number(this.battler().enemy().meta.respawn) || -1;
     this._battler = null;
@@ -3259,17 +3309,17 @@ var QuasiABS = {};
       display[item.name].iconIndex = item.iconIndex;
       display[item.name].total = display[item.name].total + 1 || 1;
     }
+    var y = this.cy();
     for (var name in display) {
       if (!display.hasOwnProperty(name)) continue;
       var string = "x" + display[name].total + " " + name;
       var iconIndex = display[name].iconIndex;
-      QuasiABS.Manager.startPopup("item", this.cx(), this.cy(), string, iconIndex);
+      QuasiABS.Manager.startPopup("item", this.cx(), y, string, iconIndex);
+      y += 22;
     }
     if (totalGold > 0) {
       $gameParty.gainGold(totalGold);
       var string = String(totalGold);
-      var y = this.cy();
-      if (totalLoot.length > 0) y += 22;
       QuasiABS.Manager.startPopup("item", this.cx(), y, string, QuasiABS.goldIcon);
     }
   };
@@ -3306,8 +3356,6 @@ var QuasiABS = {};
 
   //-----------------------------------------------------------------------------
   // AnimatedSprite
-  //
-  //
 
   AnimatedSprite.prototype = Object.create(Sprite.prototype);
   AnimatedSprite.prototype.constructor = AnimatedSprite;
@@ -3498,6 +3546,7 @@ var QuasiABS = {};
       var fadeout = "90 30 fadeout";
       var slideup = "0 120 slideup 40";
       settings.transitions = [fadeout, slideup];
+      settings.charaId = this._character === $gamePlayer ? 0 : this._character.eventId();
       sprite.setup(string, style, settings);
       this._damages.push(sprite);
       this.parent.addChild(sprite);
