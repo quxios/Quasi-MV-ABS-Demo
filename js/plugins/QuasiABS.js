@@ -913,6 +913,7 @@ var QuasiABS = {};
     var range, targets;
     var getTargetObj = {data: skill};
     var aiRange = QuasiABS.getAiRange(skill);
+    if (targetRange !== 0 || (self._radian && QuasiABS.radianAtks)) {
       var maxRange = targetRange < aiRange * 2 ? aiRange * 2 : targetRange;
       range = new QuasiMovement.Circle_Collider(w + maxRange, h + maxRange);
       range.moveto(x1 - maxRange / 2, y1 - maxRange / 2);
@@ -3095,9 +3096,9 @@ var QuasiABS = {};
 
   Game_Event.prototype.updateRespawn = function() {
     if (this._respawn === 0) {
-      this.setupBattler();
       this._erased = false;
       this._respawning = false;
+      this.setupBattler();
       this.findRespawnLocation();
       this.refresh();
     }
