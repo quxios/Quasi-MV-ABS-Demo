@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.99
-// Last Update: June 21, 2016
+// Version: 0.991
+// Last Update: June 23, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.99;
+Imported.Quasi_ABS = 0.991;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.99
+ * Version: 0.991
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -857,7 +857,7 @@ var QuasiABS = {};
     var action = {};
     var skills = self.usableSkills().filter(function(skillId) {
       targets = QuasiABS.AI.willHit(userId, skillId);
-      if (targets.length > 0) {
+      if (targets && targets.length > 0) {
         action[skillId] = targets;
         return true;
       }
@@ -2376,10 +2376,10 @@ var QuasiABS = {};
   };
 
   Game_CharacterBase.prototype.clearAgro = function() {
-    for (var chara in this._agroList) {
-      if (!this._agroList.hasOwnProperty(chara)) continue;
-      var realChara = chara == 0 ? $gamePlayer : $gameMap.event(chara);
-      realChara.removeAgro(this.eventId());
+    for (var charaId in this._agroList) {
+      if (!this._agroList.hasOwnProperty(charaId)) continue;
+      var chara = charaId == 0 ? $gamePlayer : $gameMap.event(charaId);
+      chara.removeAgro(this === $gamePlayer ? 0 : this.eventId());
     }
     this._agroList = {};
     this._inCombat = false;
