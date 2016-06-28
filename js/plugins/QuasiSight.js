@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sight
-// Version: 1.06
-// Last Update: February 14, 2016
+// Version: 1.07
+// Last Update: June 26, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -18,12 +18,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sight = 1.06;
+Imported.Quasi_Sight = 1.07;
 
 //=============================================================================
  /*:
  * @plugindesc Quasi Movement Addon: A line of sight script with real time shadow casting.
- * Version 1.06
+ * Version 1.07
  * @author Quasi      Site: http://quasixi.com
  *
  * @param Show Sight
@@ -112,7 +112,11 @@ if (Imported.Quasi_Movement < 1.25) {
   Game_CharacterBase.prototype.update = function() {
     Alias_Game_CharacterBase_update.call(this);
     if (this._sightSettings && this._sightSettings.collider) {
-      this._sightSettings.collider.update();
+      if (this._sightSettings.collider.constructor === Object) {
+        this._sightSettings = null;
+      } else {
+        this._sightSettings.collider.update();
+      }
     }
     if (this._hasSight && this.needsSightUpdate()) {
       this._prevDirection = this._direction;
@@ -164,7 +168,8 @@ if (Imported.Quasi_Movement < 1.25) {
     settings = settings || this._sightSettings;
     this._sight.tiles = $gameMap.getTileBoxesAt(this._sight.base);
     this._sight.tiles = this._sight.tiles.filter(function(tile) {
-      if (tile.width !== 0 && tile.height !== 0 && !/<noshadow>/i.test(tile.note)) {
+      if (tile.width !== 0 && tile.height !== 0 && !/<noshadow>/i.test(tile.note) &&
+          !tile.isLadder && !tile.isBush && !tile.isDamage) {
         return tile;
       }
     });
