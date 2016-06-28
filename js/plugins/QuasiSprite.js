@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Sprite
-// Version: 1.085
-// Last Update: June 18, 2016
+// Version: 1.086
+// Last Update: June 27, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -17,12 +17,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sprite = 1.085;
+Imported.Quasi_Sprite = 1.086;
 
 //=============================================================================
  /*:
  * @plugindesc Lets you configure Spritesheets
- * Version 1.085
+ * Version 1.086
  * <QuasiSprite>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -152,13 +152,13 @@ var QuasiSprite = { ready: false };
         var diag = this.isDiagonal();
       }
       if (!isMoving && this.hasPose("idle" + dir)) {
+        if (diag && this.hasPose("idle" + diag)) {
+          dir = diag;
+        }
         if (this._pose !== "idle" + dir) {
           this._pattern = 0;
           this._animationCount = 0;
           this._isIdle = true;
-        }
-        if (diag && this.hasPose("idle" + diag)) {
-          dir = diag;
         }
         this._pose = "idle" + dir;
       } else {
@@ -178,8 +178,9 @@ var QuasiSprite = { ready: false };
         if (diag && this.hasPose("move" + diag)) {
           dir = diag;
         }
-        if (!this.hasPose("move" + dir)) return;
-        this._pose = "move" + dir;
+        if (this.hasPose("move" + dir)) {
+          this._pose = "move" + dir;
+        }
       }
       return;
     }
