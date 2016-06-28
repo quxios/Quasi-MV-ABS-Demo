@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.991
-// Last Update: June 23, 2016
+// Version: 0.992
+// Last Update: June 28, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.991;
+Imported.Quasi_ABS = 0.992;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.991
+ * Version: 0.992
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -913,7 +913,7 @@ var QuasiABS = {};
     var range, targets;
     var getTargetObj = {data: skill};
     var aiRange = QuasiABS.getAiRange(skill);
-    if (targetRange !== 0 || (self._radian && QuasiABS.radianAtks)) {
+    if (targetRange !== 0) {
       var maxRange = targetRange < aiRange * 2 ? aiRange * 2 : targetRange;
       range = new QuasiMovement.Circle_Collider(w + maxRange, h + maxRange);
       range.moveto(x1 - maxRange / 2, y1 - maxRange / 2);
@@ -942,6 +942,13 @@ var QuasiABS = {};
         return range.intersects(chara.collider());
       });
     }
+    var range = self.makeSkillCollider(settings);
+    SceneManager._scene.addTempCollider(range, 60); // For testing purposes
+    getTargetObj.collider = range;
+    targets = QuasiABS.Manager.getTargets(getTargetObj, self);
+    return targets.filter(function(chara) {
+      return range.intersects(chara.collider());
+    });
   };
 
   //-----------------------------------------------------------------------------
@@ -1898,6 +1905,12 @@ var QuasiABS = {};
     $gameMap.uncompressBattlers();
   };
 
+  var Alias_Scene_Load_reloadMapIfUpdated = Scene_Load.prototype.reloadMapIfUpdated;
+  Scene_Load.prototype.reloadMapIfUpdated = function() {
+    Alias_Scene_Load_reloadMapIfUpdated.call(this);
+    $gameMap.uncompressBattlers();
+  };
+
   //-----------------------------------------------------------------------------
   // Game_System
   //
@@ -2682,6 +2695,7 @@ var QuasiABS = {};
     $gameSystem.loadClassABSKeys();
     $gameSystem.changeABSWeaponSkills({});
     this.battler().initWeaponSkills();
+    this._isDead = false;
   };
 
   Game_Player.prototype.team = function() {
@@ -2714,7 +2728,8 @@ var QuasiABS = {};
 
   Game_Player.prototype.onDeath = function() {
     this.clearABS();
-    return SceneManager.goto(Scene_Gameover);
+    this._isDead = true;
+    SceneManager.goto(Scene_Gameover);
   };
 
   var Alias_Game_Player_updateDashing = Game_Player.prototype.updateDashing;
@@ -2729,6 +2744,7 @@ var QuasiABS = {};
   };
 
   Game_Player.prototype.updateABS = function() {
+    if(this._isDead) return;
     if (this.battler() && this.canInput()) this.updateInput();
     Game_CharacterBase.prototype.updateABS.call(this);
     if (this._battlerId !== this.actor()._actorId) {
@@ -2947,13 +2963,7 @@ var QuasiABS = {};
       this._aiRange = this._battler.aiRange || QuasiABS.aiLength;
       this._aiWait1 = 0; // wait for action
       if (QuasiABS.aiSight && !this._battler._noai) {
-        this._sightSettings = {};
-        this._sightSettings.length = this._aiRange;
-        this._sightSettings.target = $gamePlayer;
-        this._sightSettings.switch = [this._mapId, this._eventId, "E"];
-        this._sightSettings.shape  = "circle";
-        this._sightSettings.update = true;
-        this._hasSight = true;
+        this.setupAISight();
       }
       for (var i = 0; i < this._actions.length; i++) {
         this._skillList.push(this._actions[i].skillId);
@@ -2964,6 +2974,16 @@ var QuasiABS = {};
       this._dontErase = this._battler._dontErase;
       this._team = this._battler._team;
     }
+  };
+
+  Game_Event.prototype.setupAISight = function() {
+    this._sightSettings = {};
+    this._sightSettings.length = this._aiRange;
+    this._sightSettings.target = $gamePlayer;
+    this._sightSettings.switch = [this._mapId, this._eventId, "E"];
+    this._sightSettings.shape  = "circle";
+    this._sightSettings.update = true;
+    this._hasSight = true;
   };
 
   Game_Event.prototype.disableEnemy = function() {
@@ -3064,6 +3084,9 @@ var QuasiABS = {};
   Game_Event.prototype.targetInRange = function(target) {
     if (!target) return false;
     if (QuasiABS.aiSight && Imported["Quasi_Sight"]) {
+      if (!this._sightSettings) {
+        this.setupAISight();
+      }
       var prev = this._sightSettings.length;
       if (this._inCombat) {
         this._sightSettings.length = this._aiRange + QuasiMovement.tileSize * 3;
@@ -3131,7 +3154,7 @@ var QuasiABS = {};
 
   Game_Event.prototype.onDeath = function() {
     if (this._onDeath) {
-      Function("return" + this._onDeath)();
+      Function(this._onDeath)();
     }
     if (this._agroList[0] > 0) {
       var exp = this.battler().exp();
