@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi Movement
-// Version: 1.298
-// Last Update: June 18, 2016
+// Version: 1.299
+// Last Update: July 10, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -22,13 +22,14 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Movement = 1.298;
+Imported.Quasi_Movement = 1.299;
 
 //=============================================================================
  /*:
- * @plugindesc Change the way RPG Maker MV handles Movement.
- * Version: 1.298
+ * @plugindesc v1.299
+ * Change the way RPG Maker MV handles Movement.
  * <QuasiMovement>
+ *
  * @author Quasi       Site: http://quasixi.com
  *
  * @param Grid
@@ -343,6 +344,8 @@ var QuasiMovement = {};
   };
   QuasiMovement.proccessParameters();
 
+  var _colliderCounter = 0;
+
   //-----------------------------------------------------------------------------
   // Polygon_Collider
   //
@@ -361,6 +364,7 @@ var QuasiMovement = {};
     this._scale = new Point(1, 1);
     this._pivot = new Point(0, 0);
     this.makeVertices(points);
+    this.id = _colliderCounter++;
   };
 
   Object.defineProperties(Polygon_Collider.prototype, {
@@ -742,6 +746,7 @@ var QuasiMovement = {};
     this._pivot = new Point(w / 2, h / 2);
     this.makeVertices(points);
     this.rotate(0);
+    this.id = _colliderCounter++;
   };
 
   Box_Collider.prototype.isPolygon = function() {
@@ -790,6 +795,7 @@ var QuasiMovement = {};
     this._pivot = new Point(w / 2, h / 2);
     this.makeVertices(points);
     this.scale(1, 1);
+    this.id = _colliderCounter++;
   };
 
   Circle_Collider.prototype.isCircle = function() {
@@ -902,40 +908,6 @@ var QuasiMovement = {};
   };
 
   //-----------------------------------------------------------------------------
-  // Game_System
-  //
-  // The game object class for the system data.
-
-  Game_System.prototype.variableFloats = function() {
-    return this._variableFloats;
-  };
-
-  Game_System.prototype.enableVariableFloats = function() {
-    this._variableFloats = true;
-  };
-
-  Game_System.prototype.disableVariableFloats = function() {
-    this._variableFloats = false;
-  };
-
-  //-----------------------------------------------------------------------------
-  // Game_Variables
-  //
-  // The game object class for variables.
-
-  var Alias_Game_Variables_setValue = Game_Variables.prototype.setValue;
-  Game_Variables.prototype.setValue = function(variableId, value) {
-    if ($gameSystem.variableFloats()) {
-      if (variableId > 0 && variableId < $dataSystem.variables.length) {
-        this._data[variableId] = value;
-        this.onChange();
-      }
-    } else {
-      Alias_Game_Variables_setValue.call(this, variableId, value);
-    }
-  };
-
-  //-----------------------------------------------------------------------------
   // Game_Interpreter
   //
   // The interpreter for running event commands.
@@ -958,7 +930,7 @@ var QuasiMovement = {};
         }
         return;
       }
-      if (args[0].toLowerCase() === "collider") {
+      if (args[0].toLowerCase() === "collider" || args[0].toLowerCase() === "setcollider") {
         var id     = Number(args[1]);
         var type   = args[2];
         var width  = Number(args[3]) || 1;
@@ -972,11 +944,11 @@ var QuasiMovement = {};
         }
         return;
       }
-      if (args[0].toLowerCase() === "collisionmap") {
+      if (args[0].toLowerCase() === "collisionmap" || args[0].toLowerCase() === "setcollisionmap") {
         $gameMap.loadCollisionmap(args[1]);
         return;
       }
-      if (args[0].toLowerCase() === "regionmap") {
+      if (args[0].toLowerCase() === "regionmap" || args[0].toLowerCase() === "setregionmap") {
         $gameMap.loadCollisionmap(args[1]);
         return;
       }
@@ -1777,7 +1749,9 @@ var QuasiMovement = {};
   };
 
   Game_CharacterBase.prototype.positionChanged = function() {
-    return this._currentPosition !== this.collider()._center;
+    if (!this._currentPosition) return true;
+    return this._currentPosition.x !== this.collider()._center.x ||
+    this._currentPosition.y !== this.collider()._center.y;
   };
 
   var Alias_Game_CharacterBase_setPosition = Game_CharacterBase.prototype.setPosition;
@@ -3764,7 +3738,6 @@ var QuasiMovement = {};
     }
   };
 
-
   //-----------------------------------------------------------------------------
   // Scene_Map
   //
@@ -3842,11 +3815,15 @@ var QuasiMovement = {};
   Sprite_Collider.prototype.setupCollider = function(collider) {
     this._collider = null;
     this._collider = collider;
-    if (this._colliderSprite) this.removeChild(this._colliderSprite);
-    this._colliderSprite = null;
-    this._colliderSprite = new PIXI.Graphics();
+    var isNew = false;
+    if (!this._colliderSprite) {
+      this._colliderSprite = new PIXI.Graphics();
+      isNew = true;
+    }
     this.drawCollider();
-    this.addChild(this._colliderSprite);
+    if (isNew) {
+      this.addChild(this._colliderSprite);
+    }
     return this._colliderSprite;
   };
 
@@ -3996,7 +3973,7 @@ var QuasiMovement = {};
     if (!this._tempColliders) return;
     var i, j;
     for (i = 0, j = this._tempColliders.length; i < j; i++) {
-      if (this._tempColliders[i].sprite.collider === collider) {
+      if (this._tempColliders[i].sprite.collider.id === collider.id) {
         this._tempColliders[i].sprite.setDuration(duration);
         return;
       }
@@ -4016,7 +3993,7 @@ var QuasiMovement = {};
       return;
     }
     for (var i = 0, j = this._tempColliders.length - 1; i >= 0; i--) {
-      if (this._tempColliders[i].sprite.collider === collider) {
+      if (this._tempColliders[i].sprite.collider.id === collider.id) {
         this._tilemap.removeChild(this._tempColliders[i].sprite);
         this._tempColliders[i].sprite = null;
         this._tempColliders.splice(i, 1);
