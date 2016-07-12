@@ -1,6 +1,6 @@
 //============================================================================
 // Quasi Sight
-// Version: 1.07
+// Version: 1.08
 // Last Update: June 26, 2016
 //============================================================================
 // ** Terms of Use
@@ -18,12 +18,14 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_Sight = 1.07;
+Imported.Quasi_Sight = 1.08;
 
 //=============================================================================
  /*:
- * @plugindesc Quasi Movement Addon: A line of sight script with real time shadow casting.
- * Version 1.07
+ * @plugindesc v1.08
+ * Quasi Movement Addon: A line of sight script with real time shadow casting.
+ * <QuasiSight>
+ *
  * @author Quasi      Site: http://quasixi.com
  *
  * @param Show Sight
@@ -32,41 +34,13 @@ Imported.Quasi_Sight = 1.07;
  * @default false
  *
  * @help
- * =============================================================================
+ * ============================================================================
  * ** Links
- * =============================================================================
+ * ============================================================================
  * For a guide on how to use this plugin go to:
- *    http://quasixi.com/quasi-sight/
- * =============================================================================
- * ** FAQ
- * =============================================================================
- * ** This seems really heavy, will it cause lag?
- *  ^ I tried my best to optimize it as much as possible and I do not get any
- *    frame drops. But with MV it will depend on user hardware.
  *
- * ** Can I give players sight?
- *  ^ There are ways to force it through with the console, but it would be
- *    pointless since sight will always look for the player.
+ *   http://quasixi.com/quasi-sight/
  *
- * ** Can I change what the event is looking for?
- *  ^ I was originally going to let you choose who to target for the sight. But
- *    that might lead to complications / misusage so no you can not.
- *
- * ** This is nice, but isn't it too much?
- *  ^ It probably is overkill for a normal RMMV game. But my plugins are aimming
- *    to allow people to create games that do not look like they were made with
- *    the RPG Maker engine.
- *
- * ** I Enabled 'Show Sight' but I can't see event shadows
- *  ^ For events since they can move, I set it up so you can only see the
- *    shadow of the event that you are inside of.
- *
- * ** I Enabled 'Show Sight' but I can't see anything
- *  ^ You need to enable 'Show Boxes' in Quasi Movement. Or toggle it with
- *  F10 while testing.
- *
- * Got questions? Ask on my Quasi Movement thread at RPGMaker Web, link below.
- * =============================================================================
  * Other Links
  *  - https://github.com/quasixi/Quasi-MV-Master-Demo
  *  - http://forums.rpgmakerweb.com/index.php?/topic/48741-quasi-movement/
@@ -77,14 +51,10 @@ if (!Imported.Quasi_Movement) {
   alert("Error: Quasi Sight requires Quasi Movement to work.");
   throw new Error("Error: Quasi Sight requires Quasi Movement to work.")
 }
-if (Imported.Quasi_Movement < 1.25) {
-  alert("Error: Quasi Sight requires Quasi Movement to work.");
-  throw new Error("Error: Quasi Sight requires Quasi Movement to work.")
-}
 (function() {
   var Sight = {};
-  Sight.parameters = PluginManager.parameters('QuasiSight');
-  Sight.show       = Sight.parameters['Show Sight'].toLowerCase() === "true";
+  var _params = $plugins.filter(function(p) { return p.description.contains('<QuasiSight>') && p.status; })[0].parameters;
+  Sight.show  = _params['Show Sight'].toLowerCase() === "true";
 
   // This isn't used, for a future feature where you
   // create polygons on the map to use for shadows.
@@ -103,10 +73,35 @@ if (Imported.Quasi_Movement < 1.25) {
   };
 
   //-----------------------------------------------------------------------------
+  // Game_Interpreter
+  //
+  // The interpreter for running event commands.
+
+  var Alias_Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+  Game_Interpreter.prototype.pluginCommand = function(command, args) {
+    if (command.toLowerCase() === "qsight") {
+      if (args[0].toLowerCase() === "setinvisible") {
+        var charaId = Number(args[1]);
+        var chara = charaId === 0 ? $gamePlayer : $gameMap.event(charaId);
+        if (!chara) return;
+        chara._invisible = args[1].toLowerCase() === "true";
+        return;
+      }
+    }
+    Alias_Game_Interpreter_pluginCommand.call(this, command, args);
+  };
+
+  //-----------------------------------------------------------------------------
   // Game_CharacterBase
   //
   // The superclass of Game_Character. It handles basic information, such as
   // coordinates and images, shared by all characters.
+
+  var Alias_Game_CharacterBase_initMembers = Game_CharacterBase.prototype.initMembers;
+  Game_CharacterBase.prototype.initMembers = function() {
+    Alias_Game_CharacterBase_initMembers.call(this);
+    this._invisible = false;
+  };
 
   var Alias_Game_CharacterBase_update = Game_CharacterBase.prototype.update;
   Game_CharacterBase.prototype.update = function() {
@@ -124,6 +119,22 @@ if (Imported.Quasi_Movement < 1.25) {
     }
   };
 
+  Game_CharacterBase.prototype.canSee = function(charaId, shape, length) {
+    var target = charaId === 0 ? $gamePlayer : $gameMap.event(charaId);
+    if (!target) return false;
+    var settings = {
+      length: length,
+      target: target,
+      shape: shape,
+      collider: this.createSightShape(shape, length)
+    }
+    this._sight = {};
+    this._sight.tileShadows = {};
+    this._sight.objs = {};
+    this._sight.target = new Point(0, 0);
+    return this.checkSight(settings);
+  };
+
   Game_CharacterBase.prototype.checkSight = function(settings) {
     this._sight.origin = {
       x: this._px,
@@ -132,6 +143,9 @@ if (Imported.Quasi_Movement < 1.25) {
     };
     settings = settings || this._sightSettings;
     this._sight.target = new Point(settings.target._px, settings.target._py);
+    if (settings.target._invisible) {
+      return false;
+    }
     if (!this.insideSightRange(settings)) return false;
     if (this.insideTileShadow(settings)) return false;
     if (this.insideEventShadow(settings)) return false;
@@ -214,10 +228,10 @@ if (Imported.Quasi_Movement < 1.25) {
     settings = settings || this._sightSettings;
     var self = this;
     var events = $gameMap.getCharactersAt(this._sight.base, function(chara) {
-      if (chara.constructor !== Game_Event) {
+      if (chara.constructor !== Game_Event || chara === self) {
         return true;
       }
-      if (!chara.castShadow() || chara.isThrough() || chara === self || !chara.isNormalPriority()) {
+      if (!chara.castShadow()) {
         return true;
       }
       return false;
@@ -358,7 +372,8 @@ if (Imported.Quasi_Movement < 1.25) {
 
   Game_CharacterBase.prototype.needsSightUpdate = function() {
     if (!this._sightSettings.collider) {
-      this.createSightShape(this._sightSettings.shape);
+      var collider = this.createSightShape(this._sightSettings.shape, this._sightSettings.length);
+      this._sightSettings.collider = collider;
     }
     if (!this._sight) {
       this._sight = {};
@@ -401,32 +416,34 @@ if (Imported.Quasi_Movement < 1.25) {
     return objMoved;
   };
 
-  Game_CharacterBase.prototype.createSightShape = function(shape) {
+  Game_CharacterBase.prototype.createSightShape = function(shape, length) {
+    var collider;
     if (shape === "circle") {
-      this._sightSettings.collider = new QuasiMovement.Circle_Collider(this._sightSettings.length * 2, this._sightSettings.length * 2);
+      collider = new QuasiMovement.Circle_Collider(length * 2, length * 2);
     } else if (shape === "box") {
-      this._sightSettings.collider = new QuasiMovement.Box_Collider(this._sightSettings.length, this._sightSettings.length);
+      collider = new QuasiMovement.Box_Collider(length, length);
     } else if (shape === "poly") {
       var w = this.collider().width;
       var h = this.collider().height;
-      var lw = this._sightSettings.length - w / 2;
-      var lh = this._sightSettings.length - h / 2;
+      var lw = length - w / 2;
+      var lh = length - h / 2;
       var points = [];
       points.push(new Point(0, 0));
       var x2 = lw + Math.cos(Math.PI / 4);
       var y2 = lh;
       points.push(new Point(x2, y2));
       points.push(new Point(-x2, y2));
-      this._sightSettings.collider = new QuasiMovement.Polygon_Collider(points);
+      collider = new QuasiMovement.Polygon_Collider(points);
       var rad = 0;
       if (this._direction === 6) rad = 0;
       if (this._direction === 2) rad = Math.PI / 2;
       if (this._direction === 4) rad = Math.PI;
       if (this._direction === 8) rad = 3 * Math.PI / 2;
       rad -= Math.PI / 2; // Rotate because base shape is facing down
-      this._sightSettings.collider.setRadian(rad);
+      collider.setRadian(rad);
     }
-    this._sightSettings.collider.moveto(this.cx(), this.cy());
+    collider.moveto(this.cx(), this.cy());
+    return collider;
   };
 
   Game_CharacterBase.prototype.castShadow = function() {
