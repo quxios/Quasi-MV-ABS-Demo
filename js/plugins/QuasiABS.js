@@ -1,6 +1,6 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.9921
+// Version: 0.9922
 // Last Update: July 26, 2016
 //============================================================================
 // ** Terms of Use
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.9921;
+Imported.Quasi_ABS = 0.9922;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.9921
+ * Version: 0.9922
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -916,7 +916,7 @@ var QuasiABS = {};
     var range, targets;
     var getTargetObj = {data: skill};
     var aiRange = QuasiABS.getAiRange(skill);
-    if (targetRange !== 0) {
+    if (targetRange !== 0 || (aiRange > 0 && QuasiABS.radianAtks)) {
       var maxRange = targetRange < aiRange * 2 ? aiRange * 2 : targetRange;
       range = new QuasiMovement.Circle_Collider(w + maxRange, h + maxRange);
       range.moveto(x1 - maxRange / 2, y1 - maxRange / 2);
