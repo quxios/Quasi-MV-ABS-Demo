@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.992
-// Last Update: June 28, 2016
+// Version: 0.9921
+// Last Update: July 26, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.992;
+Imported.Quasi_ABS = 0.9921;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.992
+ * Version: 0.9921
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -777,14 +777,17 @@ var QuasiABS = {};
     var id = event._eventId;
     if (!id) return;
     $gameMap.removeFromCharacterGrid(event);
-    var spriteset = SceneManager._scene._spriteset;
-    var spriteCharas = spriteset._characterSprites;
-    for (var i = 0; i < spriteCharas.length; i++) {
-      if (spriteCharas[i] && spriteCharas[i]._character === event) {
-        spriteset._tilemap.removeChild(spriteCharas[i]);
-        spriteCharas[i] = null;
-        spriteCharas.splice(i, 1);
-        break;
+    var scene = SceneManager._scene;
+    if (scene === Scene_Map) {
+      var spriteset = scene._spriteset;
+      var spriteCharas = spriteset._characterSprites;
+      for (var i = 0; i < spriteCharas.length; i++) {
+        if (spriteCharas[i] && spriteCharas[i]._character === event) {
+          spriteset._tilemap.removeChild(spriteCharas[i]);
+          spriteCharas[i] = null;
+          spriteCharas.splice(i, 1);
+          break;
+        }
       }
     }
     $gameMap._events[id].clearABS();
@@ -1778,16 +1781,33 @@ var QuasiABS = {};
   Game_Map.prototype.compressBattlers = function() {
     for (i = 0, j = this.events().length; i < j; i++) {
       if (this.events()[i]._battler) {
+        var oldRespawn = this.events()[i]._respawn;
         this.events()[i].clearABS();
         this.events()[i]._battler = null;
+        this.events()[i]._respawn = oldRespawn;
+      }
+      if (this.events()[i].constructor === Game_Loot) {
+        QuasiABS.Manager.removePicture(this.events()[i]._itemIcon);
+        this.events()[i]._itemIcon = null;
+        this.events()[i]._decay = 0;
       }
     }
     $gamePlayer.clearABS();
+    QuasiABS.Manager.clear();
   };
 
   Game_Map.prototype.uncompressBattlers = function() {
     for (i = 0, j = this.events().length; i < j; i++) {
+      if (this.events()[i]._respawn >= 0) {
+        var wasDead = true;
+        var oldRespawn = this.events()[i]._respawn;
+      }
       this.events()[i].setupBattler();
+      if (wasDead) {
+        this.events()[i].clearABS();
+        this.events()[i]._battler = null;
+        this.events()[i]._respawn = oldRespawn;
+      }
     }
   };
 
@@ -2545,6 +2565,12 @@ var QuasiABS = {};
   Game_CharacterBase.prototype.beforeSkill = function(skillId) {
     // Placeholder method, might need for addons
     // This function only runs from .useSkill() not .forceSkill()
+    var notes = $dataSkills[skillId].note;
+    var before = /<beforeskill>([\s\S]*)<\/beforeskill>/i.exec(notes);
+    if (before) {
+      // Change to use the skill sequencer, like the onDamage tag does?
+      eval(before[1]);
+    }
   };
 
   Game_CharacterBase.prototype.afterSkill = function(skillId) {
@@ -3154,7 +3180,7 @@ var QuasiABS = {};
 
   Game_Event.prototype.onDeath = function() {
     if (this._onDeath) {
-      Function(this._onDeath)();
+      eval(this._onDeath);
     }
     if (this._agroList[0] > 0) {
       var exp = this.battler().exp();
