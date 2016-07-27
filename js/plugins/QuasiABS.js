@@ -1936,7 +1936,7 @@ var QuasiABS = {};
   var Alias_Scene_Load_reloadMapIfUpdated = Scene_Load.prototype.reloadMapIfUpdated;
   Scene_Load.prototype.reloadMapIfUpdated = function() {
     Alias_Scene_Load_reloadMapIfUpdated.call(this);
-    QuasiABS._needsUncompress;
+    QuasiABS._needsUncompress = true;
   };
 
   //-----------------------------------------------------------------------------
