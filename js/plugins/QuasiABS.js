@@ -1,6 +1,6 @@
 //============================================================================
 // Quasi ABS
-// Version: 0.9922
+// Version: 0.9923
 // Last Update: July 26, 2016
 //============================================================================
 // ** Terms of Use
@@ -20,12 +20,12 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABS = 0.9922;
+Imported.Quasi_ABS = 0.9923;
 
 //=============================================================================
  /*:
  * @plugindesc Action Battle System
- * Version: 0.9922
+ * Version: 0.9923
  * <QuasiABS>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -1778,6 +1778,14 @@ var QuasiABS = {};
     if (mapId !== QuasiABS.Manager._mapId) QuasiABS.Manager.clear();
   };
 
+  var Alias_Game_Map_update = Game_Map.prototype.update;
+  Game_Map.prototype.update = function(sceneActive) {
+    Alias_Game_Map_update.call(this, sceneActive);
+    if (QuasiABS._needsUncompress) {
+      this.uncompressBattlers();
+    }
+  };
+
   Game_Map.prototype.compressBattlers = function() {
     for (i = 0, j = this.events().length; i < j; i++) {
       if (this.events()[i]._battler) {
@@ -1928,7 +1936,7 @@ var QuasiABS = {};
   var Alias_Scene_Load_reloadMapIfUpdated = Scene_Load.prototype.reloadMapIfUpdated;
   Scene_Load.prototype.reloadMapIfUpdated = function() {
     Alias_Scene_Load_reloadMapIfUpdated.call(this);
-    $gameMap.uncompressBattlers();
+    QuasiABS._needsUncompress;
   };
 
   //-----------------------------------------------------------------------------
