@@ -16,7 +16,7 @@
 //  - Add plugin through the plugin manager
 //  - Configure as needed
 //  - Open the Help menu for setup guide or visit one of the following:
-//  - - http://quasixi.com/mv/input/
+//  - - http://forums.rpgmakerweb.com/index.php?/topic/51087-quasi-input/
 //============================================================================
 
 var Imported = Imported || {};
@@ -26,7 +26,7 @@ Imported.Quasi_Input = 1.04;
  /*:
  * @plugindesc Adds additional keys to Input class, and allows remapping keys.
  * Version 1.04
- * @author Quasi      Site: http://quasixi.com
+ * @author Quasi
  *
  * @param Ok
  * @desc Which buttons will trigger the ok input
@@ -194,9 +194,7 @@ Imported.Quasi_Input = 1.04;
  * QuasiNameInput.js or QuasiEzJSON.js as they both use Window_TextInput
  * =============================================================================
  * Links
- *  - http://quasixi.com/mv/input/
- *  - https://github.com/quasixi/RPG-Maker-MV
- *  - http://forums.rpgmakerweb.com/index.php?/user/25663-quasi/
+ *  - http://forums.rpgmakerweb.com/index.php?/topic/51087-quasi-input/
  */
 //=============================================================================
 
