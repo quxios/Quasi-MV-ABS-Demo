@@ -12,8 +12,7 @@
 //  - Add plugin through the plugin manager
 //  - Configure as needed
 //  - Open the Help menu for setup guide or visit one of the following:
-//  - - http://quasixi.com/mv/
-//  - - http://quasixi.com/quasi-sprite/
+//  - - http://forums.rpgmakerweb.com/index.php?/topic/57648-quasi-sprite/
 //============================================================================
 
 var Imported = Imported || {};
@@ -21,10 +20,9 @@ Imported.Quasi_Sprite = 1.086;
 
 //=============================================================================
  /*:
- * @plugindesc Lets you configure Spritesheets
- * Version 1.086
+ * @plugindesc Version 1.086 Lets you configure Spritesheets
  * <QuasiSprite>
- * @author Quasi      Site: http://quasixi.com
+ * @author Quasi
  *
  * @param File Name Identifier
  * @desc Set the file name identifier for QSprites
@@ -37,11 +35,8 @@ Imported.Quasi_Sprite = 1.086;
  * ============================================================================
  * For a guide on how to use this plugin go to:
  *
- *   http://quasixi.com/quasi-sprite/
- *
- * Other Links
- *  - https://github.com/quasixi/Quasi-MV-Master-Demo
- *  - http://forums.rpgmakerweb.com/index.php?/topic/57648-quasi-sprite/
+ *   http://forums.rpgmakerweb.com/index.php?/topic/57648-quasi-sprite/
+ *   
  */
 //=============================================================================
 
@@ -395,7 +390,7 @@ var QuasiSprite = { ready: false };
 
   Sprite_Actor.prototype.isQCharacter = function() {
     if (this._isQChara === undefined) {
-      var string = "#{config}-".replace("{config}", "(.+?)");
+      var string = _identifier.replace("{config}", "(.+?)");
       var regex  = new RegExp(string);
       this._isQChara = this._battlerName.match(regex);
     }
@@ -406,7 +401,6 @@ var QuasiSprite = { ready: false };
   Sprite_Actor.prototype.startMotion = function(motionType) {
     if (this.isQCharacter()) {
       var pose = motionType;
-      console.log(pose);
       var motion = this._qSprite.poses[pose];
       if (motion) {
         this._pose = pose;
