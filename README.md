@@ -15,7 +15,7 @@ Click on the Download Zip button on the upper right of the page<br>
  * Open project and play test.
 
 <b>Reporting Bugs / Issues:</b><br>
-If you want to report a bug, please create a new issue on <a href="https://github.com/quasixi/Quasi-MV-ABS-Demo/issues">Github</a>. Try to explain the bug as best as possible and any screenshots or videos if you can. If you just have questions, please ask them here at <a href="http://forums.rpgmakerweb.com/index.php?/topic/52049-quasi-abs/">RPGMaker Webs</a>.
+I will no longer be supporting any of my plugins as of August 2016
 
 <b>TERMS OF USE FOR NON-COMMERCIAL AND COMMERCIAL:</b>
  * Free to use and modify.
@@ -27,3 +27,6 @@ If you want to report a bug, please create a new issue on <a href="https://githu
  * Any additional terms in Plugin must be followed.
 
 All plugins are free to use for free and commercial games as of March 9th, 2016. This is thanks to my <a href="https://www.patreon.com/quasixi">Patreon</a> reaching the 2nd Goal!
+
+<b>ADDITIONAL TERM AS OF AUGUST, 2016:</b>
+ * Any of my plugins may be edited and redistributed as a completely new plugin. You can even add on your own terms onto the edited version. You just need to add "This plugin was created/modified from ORIGINAL PLUGIN NAME by QuasiXI, + link to github js of that plugin", somewhere publicly visible ( in the help, above terms, ect. ).
