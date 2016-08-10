@@ -75,17 +75,4 @@ Imported.Quasi_Snippets = 1.02;
       Alias_Scene_Boot_start.call(this);
     }
   };
-
-  ImageManager.isReady = function() {
-    for (var key in this._cache) {
-      var bitmap = this._cache[key];
-      if (bitmap.isError()) {
-        this._cache[key] = new Bitmap();
-      }
-      if (!bitmap.isReady()) {
-        return false;
-      }
-    }
-    return true;
-  };
 })();
