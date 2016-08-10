@@ -1,7 +1,7 @@
 //============================================================================
 // Quasi ABS Hud A
-// Version: 1.02
-// Last Update: May 21, 2016
+// Version: 1.03
+// Last Update: August 10, 2016
 //============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -18,12 +18,11 @@
 //============================================================================
 
 var Imported = Imported || {};
-Imported.Quasi_ABSHudA = 1.02;
+Imported.Quasi_ABSHudA = 1.03;
 
 //=============================================================================
  /*:
- * @plugindesc Adds a hud for Quasi ABS ( Version A )
- * Version: 1.02
+ * @plugindesc v1.03 Adds a hud for Quasi ABS ( Version A )
  * <QuasiABSHudA>
  * @author Quasi      Site: http://quasixi.com
  *
@@ -463,9 +462,10 @@ var QuasiABSHudA = (function() {
     this.bitmap.fontSize = 14;
     this.bitmap.textColor = "#ffffa0";
     this.bitmap.drawText("Desc:", x, y, this.width, 18, "left");
-    var desc = "      " + this._skill.description;
+    var desc = "         " + this._skill.description;
     var settings = {
-      font: "14px GameFont",
+      fontName: "GameFont",
+      fontSize: 14,
       fill: "#ffffff",
       stroke: "rgba(0, 0, 0, 0.5)",
       strokeThickness: 4,
@@ -475,8 +475,7 @@ var QuasiABSHudA = (function() {
     }
     this._desc = new PIXI.Text(desc, settings);
     this._desc.x = x;
-    this._desc.y = y + 3;
-    this._desc.cacheAsBitmap = true;
+    this._desc.y = y - 1;
     this.addChild(this._desc);
     this._realHeight = Math.max(y + this._desc.height, this._realHeight);
   };
