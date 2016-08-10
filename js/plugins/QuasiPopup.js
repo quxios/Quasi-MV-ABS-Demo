@@ -1,7 +1,7 @@
 //=============================================================================
 // Quasi Popup
-// Version: 1.03
-// Last Update: June 3, 2016
+// Version: 1.04
+// Last Update: August 10, 2016
 //=============================================================================
 // ** Terms of Use
 // http://quasixi.com/terms-of-use/
@@ -16,19 +16,17 @@
 //  - Add plugin through the plugin manager
 //  - Configure as needed
 //  - Open the Help menu for setup guide or visit one of the following:
-//  - - http://quasixi.com/quasi-popup/
 //  - - http://forums.rpgmakerweb.com/index.php?/topic/58257-quasi-popup/
 //=============================================================================
 
 var Imported = Imported || {};
-Imported.QuasiPopup = 1.03;
+Imported.QuasiPopup = 1.04;
 
 //=============================================================================
  /*:
- * @plugindesc Allows to create Popups on Map
- * Version: 1.03
+ * @plugindesc v1.04 Allows to create Popups on Map
  * <QuasiPopup>
- * @author Quasi       Site: http://quasixi.com
+ * @author Quasi
  *
  * @param Default Font
  * @desc Name of default font to use
@@ -65,11 +63,6 @@ Imported.QuasiPopup = 1.03;
  * ** Links
  * ============================================================================
  * For a guide on how to use this plugin go to:
- *
- *   http://quasixi.com/quasi-popup/
- *
- * Other Links
- *  - https://github.com/quasixi/Quasi-MV-Master-Demo
  *  - http://forums.rpgmakerweb.com/index.php?/topic/58257-quasi-popup/
  * ============================================================================
  */
@@ -86,13 +79,23 @@ function Sprite_QuasiPopup() {
 // Quasi Popup
 
 var QuasiPopup = {};
+
+QuasiPopup._test = function() {
+  test = new Sprite_QuasiPopup();
+  test.setup("testing");
+  SceneManager._scene.addChild(test);
+  return test;
+};
+
 (function() {
   QuasiPopup.processParameters = function() {
     var params = $plugins.filter(function(p) { return p.description.contains('<QuasiPopup>'); })[0].parameters;
     var fontName = params["Default Font"] || "GameFont";
     var fontSize = params["Default Font Size"] || "28px";
     this._defaultStyle = {
-      font: fontSize + " " + fontName,
+      fontFamily: fontName,
+      fontSize: fontSize,
+      fontStyle: "normal",
       fill: params["Default Fill"] || "#ffffff",
       stroke: params["Default Stroke"] || "rgba(0, 0, 0, 0.5)",
       strokeThickness: Number(params["Default Stroke Thickness"]) || 4,
@@ -475,12 +478,12 @@ var QuasiPopup = {};
       var string = lines[i];
       var regex = /(.*?)<\/?(b|i|icon:(\d+))>/;
       var match = regex.exec(string);
-      var originalFont = style.font;
+      var originalStyle = style.fontStyle;
       var ran = 0;
       var icon = 0;
       while (match) {
-        style.font = bold ? "bold " + originalFont : originalFont;
-        style.font = italic ? "italic " + style.font : style.font;
+        style.fontStyle = bold ? "bold " : style.fontStyle;
+        style.fontStyle = italic ? "italic " : style.fontStyle;
         string = string.slice(match[0].length, string.length);
         if (match[3] === undefined) {
           var preLine = new PIXI.Text(match[1] || "", style);
@@ -494,7 +497,6 @@ var QuasiPopup = {};
           preLine.setFrame(sx, sy, 32, 32);
           icon = 32;
         }
-        preLine.cacheAsBitmap = true;
         preLine.x = currentX;
         currentX += preLine.width;
         lineContainer.addChild(preLine);
@@ -508,9 +510,8 @@ var QuasiPopup = {};
           break;
         }
       }
-      style.font = originalFont;
+      style.fontStyle = originalStyle;
       var line = new PIXI.Text(string, style);
-      line.cacheAsBitmap = true;
       line.x = currentX;
       lineContainer.addChild(line);
       currentX += line.width;
