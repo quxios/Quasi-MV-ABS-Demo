@@ -161,6 +161,9 @@ header {
   float:left;
   position:fixed;
   -webkit-font-smoothing:subpixel-antialiased;
+  overflow: auto;
+  top: 0;
+  bottom: 0;
 }
 
 header ul {
@@ -262,9 +265,6 @@ footer {
 
   header {
     padding-right:320px;
-    overflow: auto;
-    top: 0;
-    bottom: 0;
   }
 
   section {
