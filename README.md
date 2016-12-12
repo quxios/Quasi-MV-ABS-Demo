@@ -1,7 +1,7 @@
 Quasi MV ABS Demo
 ====================
 <b>Documentation:</b><br>
-<a href="http://quasixi.com/quasi-abs-documentation/">quasixi.com</a>
+http://quxios.github.io/Quasi-MV-ABS-Demo/
 
 <b>Downloading Demo:</b><br>
 Click on the Download Zip button on the upper right of the page<br>
