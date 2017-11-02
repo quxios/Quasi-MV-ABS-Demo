@@ -1,5 +1,7 @@
 Quasi MV ABS Demo
 ====================
+NO LONGER SUPPORTED
+===================
 <b>Documentation:</b><br>
 http://quxios.github.io/Quasi-MV-ABS-Demo/
 
