@@ -1,6 +1,6 @@
 Quasi MV ABS Demo
 ====================
-NO LONGER SUPPORTED
+NO LONGER SUPPORTED, PLEASE USE [QABS](https://github.com/quxios/QMV-ABS-Demo)
 ===================
 <b>Documentation:</b><br>
 http://quxios.github.io/Quasi-MV-ABS-Demo/
